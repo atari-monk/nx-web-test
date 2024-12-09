@@ -1,4 +1,4 @@
-import NxWelcome from './nx-welcome';
+import { SocketStatus } from '@nx-web-test/shared-ui';
 
 export function App() {
   return (
@@ -6,7 +6,7 @@ export function App() {
       <style jsx>{`
         /** your style here **/
       `}</style>
-      <NxWelcome title="client" />
+      <SocketStatus socketUrl="http://localhost:3333" />
     </div>
   );
 }
