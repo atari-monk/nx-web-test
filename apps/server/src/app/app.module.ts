@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ChatGateway, ChatService } from '@nx-web-test/shared-nest';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [ChatGateway, ChatService],
 })
 export class AppModule {}
