@@ -14,7 +14,11 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@nx-web-test/shared": ["packages/shared/src/index.ts"],
+      "@nx-web-test/shared-nest": ["packages/shared-nest/src/index.ts"],
+      "@nx-web-test/shared-ui": ["packages/shared-ui/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }
