@@ -1,7 +1,7 @@
 export interface Message {
   sender: string;
   message: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
 export interface RoomMessages {

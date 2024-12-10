@@ -8,6 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { ChatService } from './chat.service';
 import { Server, Socket } from 'socket.io';
+import { Message } from '@nx-web-test/shared';
 
 @WebSocketGateway({
   cors: {
@@ -38,11 +39,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): void {
     const { room, message, sender } = payload;
 
-    this.logger.log(
-      `Message received: ${message} from ${sender} (room: ${room})`
-    );
-    this.server.to(room).emit('receive_message', { message, sender });
+    // Construct the message using the Message model
+    const messageData: Message = {
+      sender,
+      message,
+      timestamp: new Date().toISOString(),
+    };
 
+    // Debug logs
+    this.logger.debug(`Message timestamp: ${messageData.timestamp}`);
+    this.logger.debug(`Message data: ${JSON.stringify(messageData)}`);
+
+    // Emit the message to the room
+    this.server.to(room).emit('receive_message', messageData);
+
+    // Log the message using the service
     this.chatService.logMessage(room, sender, message);
   }
 

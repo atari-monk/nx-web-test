@@ -16,10 +16,12 @@ const Chat: React.FC = () => {
 
     // Listen for incoming messages
     newSocket.on('receive_message', (data: Message) => {
+      console.debug('Received message:', data);
       setMessages((prev) => [...prev, data]);
     });
 
     return () => {
+      newSocket?.off('receive_message');
       newSocket.disconnect();
     };
   }, []);
@@ -35,7 +37,7 @@ const Chat: React.FC = () => {
       const messageData: Message = {
         sender: username,
         message,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
       socket?.emit('send_message', { room, ...messageData });
       setMessage('');
@@ -74,12 +76,20 @@ const Chat: React.FC = () => {
       <div>
         <h4>Messages:</h4>
         <ul>
-          {messages.map((msg, index) => (
-            <li key={index}>
-              <strong>{msg.sender}:</strong> {msg.message}{' '}
-              <em>({new Date(msg.timestamp).toLocaleTimeString()})</em>
-            </li>
-          ))}
+          {messages.map((msg, index) => {
+            const formattedTime = new Intl.DateTimeFormat('en-GB', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            }).format(new Date(msg.timestamp));
+
+            return (
+              <li key={index}>
+                <strong>{msg.sender}:</strong> {msg.message}{' '}
+                <em>({formattedTime})</em>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>

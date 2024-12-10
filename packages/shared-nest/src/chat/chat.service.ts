@@ -18,7 +18,11 @@ export class ChatService {
     if (!this.messages[room]) {
       this.messages[room] = [];
     }
-    this.messages[room].push({ sender, message, timestamp: new Date() });
+    this.messages[room].push({
+      sender,
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   getMessages(room: string): Message[] {
