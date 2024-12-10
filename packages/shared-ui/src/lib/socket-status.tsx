@@ -32,7 +32,7 @@ const SocketStatus: React.FC<SocketStatusProps> = ({ socketUrl }) => {
 
   return (
     <div>
-      <h3>Connection Status: {message}</h3>
+      <p>Connection Status: {message}</p>
     </div>
   );
 };

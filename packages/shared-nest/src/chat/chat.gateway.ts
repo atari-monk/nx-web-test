@@ -47,8 +47,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
 
     // Debug logs
-    this.logger.debug(`Message timestamp: ${messageData.timestamp}`);
-    this.logger.debug(`Message data: ${JSON.stringify(messageData)}`);
+    this.logger.debug(`Message: ${JSON.stringify(messageData)}`);
 
     // Emit the message to the room
     this.server.to(room).emit('receive_message', messageData);
