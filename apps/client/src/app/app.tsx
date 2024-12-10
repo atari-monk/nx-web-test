@@ -1,4 +1,4 @@
-import { Chat, SocketStatus } from '@nx-web-test/shared-ui';
+import { Chat, GameGrid, SocketStatus } from '@nx-web-test/shared-ui';
 
 export function App() {
   return (
@@ -6,7 +6,8 @@ export function App() {
       <style jsx>{`
         /** your style here **/
       `}</style>
-      <Chat />
+      {/* <GameGrid gridSize={10} /> */}
+      {/* <Chat /> */}
       <SocketStatus socketUrl="http://localhost:3333" />
     </div>
   );
