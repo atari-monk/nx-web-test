@@ -8,7 +8,7 @@ import { Logger } from '@nestjs/common';
 import { Grid, Player, ShipPlacement } from '@nx-web-test/shared';
 
 @WebSocketGateway()
-export class GameGateway {
+export class BattleshipGateway {
   @WebSocketServer()
   server!: Server;
 

@@ -1,3 +1,3 @@
-export * from './lib/shared-nest.module';
-export { ChatService } from './chat/chat.service';
-export { ChatGateway } from './chat/chat.gateway';
+export { StatusModule } from './status/status.module';
+export { ChatModule } from './chat/chat.module';
+export { BattleshipModule } from './battleship/battleship.module';
