@@ -14,7 +14,6 @@ const Chat: React.FC = () => {
     setSocket(newSocket);
 
     newSocket.on('receive_message', (data: Message) => {
-      console.debug('Received message:', data);
       setMessages((prev) => [...prev, data]);
     });
 
