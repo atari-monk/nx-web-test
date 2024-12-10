@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ChatGateway, ChatService } from '@nx-web-test/shared-nest';
+import {
+  StatusModule,
+  ChatModule,
+  BattleshipModule,
+} from '@nx-web-test/shared-nest';
 
 @Module({
-  providers: [ChatGateway, ChatService],
+  imports: [StatusModule, ChatModule, BattleshipModule],
 })
 export class AppModule {}

@@ -4,7 +4,7 @@ export function App() {
   return (
     <div>
       {/* <GameGrid gridSize={10} /> */}
-      {/* <Chat /> */}
+      <Chat />
       <SocketStatus socketUrl="http://localhost:3333" />
     </div>
   );
