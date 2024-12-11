@@ -10,9 +10,6 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [gameManager] = useState(() => new GameManager(gridSize));
   const [grid, setGrid] = useState(gameManager.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
-  const [selectedCells, setSelectedCells] = useState<
-    { x: number; y: number }[]
-  >([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
   const [hoveredCells, setHoveredCells] = useState<{ x: number; y: number }[]>(
@@ -28,34 +25,12 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
     };
   }, []);
 
-  const handleCellClick = (x: number, y: number) => {
-    const isAlreadySelected = selectedCells.some(
-      (cell) => cell.x === x && cell.y === y
-    );
-
-    if (isAlreadySelected) {
-      setSelectedCells((prev) =>
-        prev.filter((cell) => cell.x !== x || cell.y !== y)
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.deltaY !== 0) {
+      gameManager.rotateShip();
+      setStatusMessage(
+        `Ship rotated to ${gameManager.getCurrentShip().orientation}`
       );
-    } else {
-      const newSelection = [...selectedCells, { x, y }];
-      if (newSelection.length === gameManager.getCurrentShip().size) {
-        const isValid = gameManager.placeShip(newSelection);
-        if (isValid) {
-          setGrid(gameManager.getGrid());
-          setSelectedCells([]);
-          setStatusMessage('');
-          if (gameManager.isFleetCompleted()) {
-            setFleetCompleted(true);
-            setStatusMessage('Fleet completed! Sending to server...');
-            socket?.emit('placeFleet', gameManager.getFleet());
-          }
-        } else {
-          setStatusMessage('Invalid placement. Try again!');
-        }
-      } else {
-        setSelectedCells(newSelection);
-      }
     }
   };
 
@@ -78,8 +53,36 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
     );
   };
 
+  const handleMouseClick = (x: number, y: number) => {
+    const currentShip = gameManager.getCurrentShip();
+    const previewCells = gameManager.getShipPlacementPreview(
+      x,
+      y,
+      currentShip.size
+    );
+
+    const isValidPlacement = gameManager.validatePlacement(
+      previewCells,
+      currentShip.size
+    );
+    if (isValidPlacement) {
+      gameManager.placeShip(previewCells);
+      setGrid(gameManager.getGrid());
+      setHoveredCells([]);
+      setStatusMessage('');
+
+      if (gameManager.isFleetCompleted()) {
+        setFleetCompleted(true);
+        setStatusMessage('Fleet completed! Sending to server...');
+        socket?.emit('placeFleet', gameManager.getFleet());
+      }
+    } else {
+      setStatusMessage('Invalid placement. Try again!');
+    }
+  };
+
   return (
-    <div>
+    <div onWheel={handleWheel}>
       <h2>
         Place your {gameManager.getCurrentShip()?.name} (
         {gameManager.getCurrentShip()?.size}x1) | {statusMessage}
@@ -110,7 +113,7 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
             return (
               <div
                 key={cell.id}
-                onClick={() => handleCellClick(rowIndex, colIndex)}
+                onClick={() => handleMouseClick(rowIndex, colIndex)}
                 onMouseEnter={() => handleMouseOver(rowIndex, colIndex)}
                 style={{
                   width: '30px',
@@ -122,10 +125,6 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
                       : 'red'
                     : cell.occupied
                     ? 'blue'
-                    : selectedCells.some(
-                        (sel) => sel.x === rowIndex && sel.y === colIndex
-                      )
-                    ? 'lightblue'
                     : 'white',
                   cursor: 'pointer',
                 }}

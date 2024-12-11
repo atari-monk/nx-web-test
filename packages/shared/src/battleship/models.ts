@@ -22,3 +22,9 @@ export interface Player {
   grid: Grid;
   ships: ShipPlacement[];
 }
+
+export interface Ship {
+  name: string;
+  size: number;
+  orientation: 'horizontal' | 'vertical'; // Add this field
+}

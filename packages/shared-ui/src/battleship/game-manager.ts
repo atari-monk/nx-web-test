@@ -1,4 +1,4 @@
-import { Cell, ShipPlacement } from '@nx-web-test/shared';
+import { Cell, Ship, ShipPlacement } from '@nx-web-test/shared';
 
 export class GameManager {
   private gridSize: number;
@@ -6,12 +6,12 @@ export class GameManager {
   private fleet: ShipPlacement[] = [];
   private currentShipIndex = 0;
 
-  private shipList = [
-    { name: 'Frigate', size: 2 },
-    { name: 'Destroyer', size: 3 },
-    { name: 'Submarine', size: 3 },
-    { name: 'Battleship', size: 4 },
-    { name: 'Carrier', size: 5 },
+  private shipList: Ship[] = [
+    { name: 'Frigate', size: 2, orientation: 'horizontal' },
+    { name: 'Destroyer', size: 3, orientation: 'horizontal' },
+    { name: 'Submarine', size: 3, orientation: 'horizontal' },
+    { name: 'Battleship', size: 4, orientation: 'horizontal' },
+    { name: 'Carrier', size: 5, orientation: 'horizontal' },
   ];
 
   constructor(gridSize: number) {
@@ -115,30 +115,41 @@ export class GameManager {
     ];
   }
 
-  // In GameManager class
   getShipPlacementPreview(
     x: number,
     y: number,
     size: number
   ): { x: number; y: number }[] {
     const currentShip = this.getCurrentShip();
-    const orientation =
-      x + size <= this.gridSize && this.grid[x + size - 1][y].occupied === false
-        ? 'vertical'
-        : 'horizontal';
+    const orientation = currentShip.orientation;
 
     const cells: { x: number; y: number }[] = [];
 
     if (orientation === 'horizontal') {
-      for (let i = 0; i < size; i++) {
-        cells.push({ x, y: y + i });
+      // Check if the placement is valid for horizontal orientation
+      if (y + size <= this.gridSize) {
+        for (let i = 0; i < size; i++) {
+          cells.push({ x, y: y + i });
+        }
       }
-    } else {
-      for (let i = 0; i < size; i++) {
-        cells.push({ x: x + i, y });
+    } else if (orientation === 'vertical') {
+      // Check if the placement is valid for vertical orientation
+      if (x + size <= this.gridSize) {
+        for (let i = 0; i < size; i++) {
+          cells.push({ x: x + i, y });
+        }
       }
     }
 
     return cells;
+  }
+
+  // Add a method for rotating the ship
+  rotateShip() {
+    // Rotate between horizontal and vertical orientation
+    const currentShip = this.getCurrentShip();
+    const orientation =
+      currentShip.orientation === 'horizontal' ? 'vertical' : 'horizontal';
+    currentShip.orientation = orientation;
   }
 }
