@@ -70,18 +70,38 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
     setCurrentHover({ x, y }); // Store the last hovered position
 
     const currentShip = gameManager.getCurrentShip();
-    const previewCells = gameManager.getShipPlacementPreview(
+    let previewCells = gameManager.getShipPlacementPreview(
       x,
       y,
       currentShip.size
     );
 
-    setHoveredCells(previewCells);
-
-    const isValidPlacement = gameManager.validatePlacement(
+    // Check if the current orientation is valid
+    let isValidPlacement = gameManager.validatePlacement(
       previewCells,
       currentShip.size
     );
+
+    if (!isValidPlacement) {
+      // Try rotating the ship
+      gameManager.rotateShip();
+      setStatusMessage(
+        `Ship rotated to ${gameManager.getCurrentShip().orientation}`
+      );
+      previewCells = gameManager.getShipPlacementPreview(
+        x,
+        y,
+        currentShip.size
+      );
+
+      // Validate after rotation
+      isValidPlacement = gameManager.validatePlacement(
+        previewCells,
+        currentShip.size
+      );
+    }
+
+    setHoveredCells(previewCells);
     setStatusMessage(
       isValidPlacement ? 'Valid placement!' : 'Invalid placement.'
     );
