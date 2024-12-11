@@ -4,8 +4,8 @@ import {
   ChatModule,
   BattleshipModule,
 } from '@nx-web-test/shared-nest';
-
+//StatusModule, ChatModule,
 @Module({
-  imports: [StatusModule, ChatModule, BattleshipModule],
+  imports: [BattleshipModule],
 })
 export class AppModule {}

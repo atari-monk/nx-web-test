@@ -20,10 +20,22 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
     y: number;
   } | null>(null); // Track last hover position
 
+  // Socket initialization moved to a separate useEffect
   useEffect(() => {
     const newSocket = io('http://localhost:3333');
+
+    newSocket.on('connect', () => {
+      console.log('Successfully connected to the server');
+    });
+
     setSocket(newSocket);
 
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []); // Empty dependency array ensures it's run once on mount and cleaned up on unmount
+
+  useEffect(() => {
     // Update grid and hovered cells on rotation
     gameManager.onShipRotation(() => {
       setGrid([...gameManager.getGrid()]); // Trigger grid re-render
@@ -38,10 +50,6 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
         setHoveredCells(previewCells);
       }
     });
-
-    return () => {
-      newSocket.disconnect();
-    };
   }, [gameManager, currentHover]);
 
   const handleWheel = (e: React.WheelEvent) => {

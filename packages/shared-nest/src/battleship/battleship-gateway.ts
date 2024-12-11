@@ -7,7 +7,11 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { Cell, Grid, Player, ShipPlacement } from '@nx-web-test/shared';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*', // Allow all origins (configure this in production)
+  },
+})
 export class BattleshipGateway {
   @WebSocketServer()
   server!: Server;
@@ -17,6 +21,7 @@ export class BattleshipGateway {
 
   @SubscribeMessage('joinGame')
   handleJoinGame(client: Socket): void {
+    console.log('Client connected:', client.id);
     if (this.players.length < 2) {
       const player: Player = {
         id: client.id,
@@ -40,6 +45,7 @@ export class BattleshipGateway {
 
   @SubscribeMessage('placeFleet')
   handlePlaceFleet(client: Socket, fleet: ShipPlacement[]): void {
+    console.log('Fleet placement from:', client.id);
     const player = this.players.find((p) => p.id === client.id);
 
     if (player && player.state === 'placement') {
@@ -66,6 +72,7 @@ export class BattleshipGateway {
 
   @SubscribeMessage('attack')
   handleAttack(client: Socket, { x, y }: { x: number; y: number }): void {
+    console.log('Attack from:', client.id);
     const currentPlayer = this.players[this.currentTurnIndex];
     const opponent = this.players.find((p) => p.id !== currentPlayer.id);
 
