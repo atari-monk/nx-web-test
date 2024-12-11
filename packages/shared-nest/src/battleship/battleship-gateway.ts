@@ -21,11 +21,27 @@ export class BattleshipGateway {
   private currentTurnIndex = 0; // Tracks the current player's turn
 
   @SubscribeMessage('joinGame')
-  handleJoinGame(client: Socket): void {
-    this.logger.debug(`Client connected: ${client.id}`);
+  handleJoinGame(client: Socket, data: { playerId: string }): void {
+    const { playerId } = data;
+    this.logger.debug(
+      `Client connected: ${client.id} with playerId: ${playerId}`
+    );
+
+    // Check if the player already exists
+    const existingPlayer = this.players.find((p) => p.id === playerId);
+
+    if (existingPlayer) {
+      // Update the socket ID for the existing player
+      existingPlayer.socketId = client.id;
+      client.emit('joined', { message: 'Reconnected to the game!' });
+      this.logger.debug(`Player reconnected: ${playerId}`);
+      return;
+    }
+
     if (this.players.length < 2) {
       const player: Player = {
-        id: client.id,
+        id: playerId,
+        socketId: client.id,
         grid: { size: 10, cells: this.createEmptyGrid(10) },
         ships: [],
         state: 'placement',
@@ -44,6 +60,26 @@ export class BattleshipGateway {
     } else {
       client.emit('error', 'Game is already full!');
       this.logger.debug('Game is already full.');
+    }
+  }
+
+  @SubscribeMessage('disconnect')
+  handleDisconnect(client: Socket): void {
+    const playerIndex = this.players.findIndex((p) => p.socketId === client.id);
+    if (playerIndex !== -1) {
+      const player = this.players[playerIndex];
+      this.logger.debug(`Player disconnected: ${player.id}`);
+
+      // Optionally, remove the player if they don't reconnect within a grace period
+      setTimeout(() => {
+        const stillDisconnected = !this.players.find(
+          (p) => p.socketId === client.id
+        );
+        if (stillDisconnected) {
+          this.players.splice(playerIndex, 1);
+          this.logger.debug(`Player removed after grace period: ${player.id}`);
+        }
+      }, 30000); // 30 seconds grace period
     }
   }
 

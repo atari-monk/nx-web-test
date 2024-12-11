@@ -18,7 +18,8 @@ export interface ShipPlacement {
 }
 
 export interface Player {
-  id: string; // Unique identifier for the player (e.g., socket ID)
+  id: string; // Unique identifier for the player (e.g., persistent ID)
+  socketId: string; // Current WebSocket connection ID
   name?: string; // Optional player name
   grid: Grid; // Player's grid
   ships: ShipPlacement[]; // List of the player's ships

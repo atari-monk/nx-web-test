@@ -6,6 +6,10 @@ interface GridProps {
   gridSize: number;
 }
 
+function generatePlayerId(): string {
+  return `player-${Math.random().toString(36).substring(2, 15)}`;
+}
+
 const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [gameManager] = useState(() => new PlacementManager(gridSize));
   const [grid, setGrid] = useState(gameManager.getGrid());
@@ -21,11 +25,16 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   } | null>(null); // Track last hover position
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3333');
+    const playerId = localStorage.getItem('playerId') || generatePlayerId();
+    localStorage.setItem('playerId', playerId);
+
+    const newSocket = io('http://localhost:3333', {
+      query: { playerId },
+    });
 
     newSocket.on('connect', () => {
       console.debug('Connected to the server');
-      newSocket.emit('joinGame');
+      newSocket.emit('joinGame', { playerId });
     });
 
     // Log all relevant events
