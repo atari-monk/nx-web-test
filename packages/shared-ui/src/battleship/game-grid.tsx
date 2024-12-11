@@ -15,6 +15,9 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
   >([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [hoveredCells, setHoveredCells] = useState<{ x: number; y: number }[]>(
+    []
+  );
 
   useEffect(() => {
     const newSocket = io('http://localhost:3333');
@@ -36,14 +39,12 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
       );
     } else {
       const newSelection = [...selectedCells, { x, y }];
-
       if (newSelection.length === gameManager.getCurrentShip().size) {
         const isValid = gameManager.placeShip(newSelection);
         if (isValid) {
           setGrid(gameManager.getGrid());
           setSelectedCells([]);
           setStatusMessage('');
-
           if (gameManager.isFleetCompleted()) {
             setFleetCompleted(true);
             setStatusMessage('Fleet completed! Sending to server...');
@@ -56,6 +57,25 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
         setSelectedCells(newSelection);
       }
     }
+  };
+
+  const handleMouseOver = (x: number, y: number) => {
+    const currentShip = gameManager.getCurrentShip();
+    const previewCells = gameManager.getShipPlacementPreview(
+      x,
+      y,
+      currentShip.size
+    );
+
+    setHoveredCells(previewCells);
+
+    const isValidPlacement = gameManager.validatePlacement(
+      previewCells,
+      currentShip.size
+    );
+    setStatusMessage(
+      isValidPlacement ? 'Valid placement!' : 'Invalid placement.'
+    );
   };
 
   return (
@@ -73,25 +93,45 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
         }}
       >
         {grid.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <div
-              key={cell.id}
-              onClick={() => handleCellClick(rowIndex, colIndex)}
-              style={{
-                width: '30px',
-                height: '30px',
-                border: '1px solid #ccc',
-                backgroundColor: cell.occupied
-                  ? 'blue'
-                  : selectedCells.some(
-                      (sel) => sel.x === rowIndex && sel.y === colIndex
-                    )
-                  ? 'lightblue'
-                  : 'white',
-                cursor: 'pointer',
-              }}
-            />
-          ))
+          row.map((cell, colIndex) => {
+            const isHovered = hoveredCells.some(
+              (hoveredCell) =>
+                hoveredCell.x === rowIndex && hoveredCell.y === colIndex
+            );
+            const isValid =
+              hoveredCells.some(
+                (hoveredCell) =>
+                  hoveredCell.x === rowIndex && hoveredCell.y === colIndex
+              ) &&
+              gameManager.validatePlacement(
+                hoveredCells,
+                gameManager.getCurrentShip().size
+              );
+            return (
+              <div
+                key={cell.id}
+                onClick={() => handleCellClick(rowIndex, colIndex)}
+                onMouseEnter={() => handleMouseOver(rowIndex, colIndex)}
+                style={{
+                  width: '30px',
+                  height: '30px',
+                  border: '1px solid #ccc',
+                  backgroundColor: isHovered
+                    ? isValid
+                      ? 'green'
+                      : 'red'
+                    : cell.occupied
+                    ? 'blue'
+                    : selectedCells.some(
+                        (sel) => sel.x === rowIndex && sel.y === colIndex
+                      )
+                    ? 'lightblue'
+                    : 'white',
+                  cursor: 'pointer',
+                }}
+              />
+            );
+          })
         )}
       </div>
     </div>

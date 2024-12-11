@@ -114,4 +114,31 @@ export class GameManager {
       { x: x + 1, y: y + 1 },
     ];
   }
+
+  // In GameManager class
+  getShipPlacementPreview(
+    x: number,
+    y: number,
+    size: number
+  ): { x: number; y: number }[] {
+    const currentShip = this.getCurrentShip();
+    const orientation =
+      x + size <= this.gridSize && this.grid[x + size - 1][y].occupied === false
+        ? 'vertical'
+        : 'horizontal';
+
+    const cells: { x: number; y: number }[] = [];
+
+    if (orientation === 'horizontal') {
+      for (let i = 0; i < size; i++) {
+        cells.push({ x, y: y + i });
+      }
+    } else {
+      for (let i = 0; i < size; i++) {
+        cells.push({ x: x + i, y });
+      }
+    }
+
+    return cells;
+  }
 }
