@@ -14,6 +14,8 @@ export class GameManager {
     { name: 'Carrier', size: 5, orientation: 'horizontal' },
   ];
 
+  private onShipRotationCallbacks: (() => void)[] = [];
+
   constructor(gridSize: number) {
     this.gridSize = gridSize;
     this.grid = Array.from({ length: gridSize }, (_, rowIndex) =>
@@ -126,14 +128,12 @@ export class GameManager {
     const cells: { x: number; y: number }[] = [];
 
     if (orientation === 'horizontal') {
-      // Check if the placement is valid for horizontal orientation
       if (y + size <= this.gridSize) {
         for (let i = 0; i < size; i++) {
           cells.push({ x, y: y + i });
         }
       }
     } else if (orientation === 'vertical') {
-      // Check if the placement is valid for vertical orientation
       if (x + size <= this.gridSize) {
         for (let i = 0; i < size; i++) {
           cells.push({ x: x + i, y });
@@ -144,12 +144,17 @@ export class GameManager {
     return cells;
   }
 
-  // Add a method for rotating the ship
   rotateShip() {
-    // Rotate between horizontal and vertical orientation
     const currentShip = this.getCurrentShip();
-    const orientation =
+    currentShip.orientation =
       currentShip.orientation === 'horizontal' ? 'vertical' : 'horizontal';
-    currentShip.orientation = orientation;
+
+    // Notify listeners about the rotation
+    this.onShipRotationCallbacks.forEach((callback) => callback());
+  }
+
+  // Method to register callbacks when ship rotates
+  onShipRotation(callback: () => void) {
+    this.onShipRotationCallbacks.push(callback);
   }
 }

@@ -15,26 +15,60 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [hoveredCells, setHoveredCells] = useState<{ x: number; y: number }[]>(
     []
   );
+  const [currentHover, setCurrentHover] = useState<{
+    x: number;
+    y: number;
+  } | null>(null); // Track last hover position
 
   useEffect(() => {
     const newSocket = io('http://localhost:3333');
     setSocket(newSocket);
 
+    // Update grid and hovered cells on rotation
+    gameManager.onShipRotation(() => {
+      setGrid([...gameManager.getGrid()]); // Trigger grid re-render
+      if (currentHover) {
+        // Recalculate the preview for the last hovered position
+        const currentShip = gameManager.getCurrentShip();
+        const previewCells = gameManager.getShipPlacementPreview(
+          currentHover.x,
+          currentHover.y,
+          currentShip.size
+        );
+        setHoveredCells(previewCells);
+      }
+    });
+
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [gameManager, currentHover]);
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.deltaY !== 0) {
-      gameManager.rotateShip();
+      gameManager.rotateShip(); // Rotate the ship
+
+      // Update hovered cells immediately after rotation
+      if (currentHover) {
+        const currentShip = gameManager.getCurrentShip();
+        const previewCells = gameManager.getShipPlacementPreview(
+          currentHover.x,
+          currentHover.y,
+          currentShip.size
+        );
+        setHoveredCells(previewCells);
+      }
+
       setStatusMessage(
         `Ship rotated to ${gameManager.getCurrentShip().orientation}`
       );
+      setGrid([...gameManager.getGrid()]); // Update the grid immediately after rotation
     }
   };
 
   const handleMouseOver = (x: number, y: number) => {
+    setCurrentHover({ x, y }); // Store the last hovered position
+
     const currentShip = gameManager.getCurrentShip();
     const previewCells = gameManager.getShipPlacementPreview(
       x,
