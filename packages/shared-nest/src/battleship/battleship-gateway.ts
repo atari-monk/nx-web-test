@@ -19,10 +19,21 @@ export class BattleshipGateway {
     const player = this.players.find((p) => p.id === client.id);
 
     if (player) {
-      // Check if the ship can be placed on the grid (add validation logic here)
       if (this.canPlaceShip(player.grid, payload)) {
-        player.ships.push(payload); // Add the ship to the player's ship list
-        this.server.emit('shipPlaced', payload); // Notify other players
+        // Mark the cells as occupied
+        for (let i = 0; i < payload.size; i++) {
+          const x =
+            payload.orientation === 'horizontal' ? payload.x : payload.x + i;
+          const y =
+            payload.orientation === 'horizontal' ? payload.y + i : payload.y;
+
+          if (player.grid.cells[x] && player.grid.cells[x][y]) {
+            player.grid.cells[x][y].occupied = true;
+          }
+        }
+
+        player.ships.push(payload); // Add the ship to the player's list
+        this.server.emit('shipPlaced', payload); // Notify other clients
       } else {
         client.emit('error', 'Invalid ship placement');
       }
@@ -30,7 +41,42 @@ export class BattleshipGateway {
   }
 
   private canPlaceShip(grid: Grid, ship: ShipPlacement): boolean {
-    // Logic for validating if a ship can be placed (e.g., no overlap, within grid bounds)
+    const { x, y, size, orientation } = ship;
+
+    // Check boundaries
+    if (
+      (orientation === 'horizontal' && y + size > grid.size) ||
+      (orientation === 'vertical' && x + size > grid.size)
+    ) {
+      return false;
+    }
+
+    // Check for overlaps
+    for (let i = 0; i < size; i++) {
+      const currentX = orientation === 'horizontal' ? x : x + i;
+      const currentY = orientation === 'horizontal' ? y + i : y;
+
+      if (grid.cells[currentX] && grid.cells[currentX][currentY]?.occupied) {
+        return false;
+      }
+    }
+
     return true;
+  }
+
+  @SubscribeMessage('placeFleet')
+  handlePlaceFleet(client: Socket, fleet: ShipPlacement[]): void {
+    const player = this.players.find((p) => p.id === client.id);
+
+    if (player) {
+      player.ships = fleet; // Store the fleet
+      this.checkGameReady();
+    }
+  }
+
+  private checkGameReady(): void {
+    if (this.players.every((p) => p.ships.length > 0)) {
+      this.server.emit('gameStart', 'All players have placed their fleets!');
+    }
   }
 }
