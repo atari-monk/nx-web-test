@@ -1,6 +1,6 @@
 import { Cell, Ship, ShipPlacement } from '@nx-web-test/shared';
 
-export class GameManager {
+export class PlacementManager {
   private gridSize: number;
   private grid: Cell[][];
   private fleet: ShipPlacement[] = [];

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { GameManager } from './game-manager';
+import { PlacementManager } from './placement-manager';
 
 interface GridProps {
   gridSize: number;
 }
 
-const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
-  const [gameManager] = useState(() => new GameManager(gridSize));
+const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
+  const [gameManager] = useState(() => new PlacementManager(gridSize));
   const [grid, setGrid] = useState(gameManager.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -191,4 +191,4 @@ const GameGrid: React.FC<GridProps> = ({ gridSize }) => {
   );
 };
 
-export default GameGrid;
+export default PlacementGrid;
