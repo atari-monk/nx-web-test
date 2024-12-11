@@ -20,12 +20,31 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
     y: number;
   } | null>(null); // Track last hover position
 
-  // Socket initialization moved to a separate useEffect
   useEffect(() => {
     const newSocket = io('http://localhost:3333');
 
     newSocket.on('connect', () => {
-      console.log('Successfully connected to the server');
+      console.debug('Connected to the server');
+      newSocket.emit('joinGame');
+    });
+
+    // Log all relevant events
+    const events = [
+      'joined',
+      'gameReady',
+      'fleetPlaced',
+      'gameStart',
+      'attackResult',
+      'attacked',
+      'turnChange',
+      'gameOver',
+      'error',
+    ];
+
+    events.forEach((event) => {
+      newSocket.on(event, (data) => {
+        console.debug(`Event received: ${event}`, data);
+      });
     });
 
     setSocket(newSocket);
@@ -33,7 +52,7 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
     return () => {
       newSocket.disconnect();
     };
-  }, []); // Empty dependency array ensures it's run once on mount and cleaned up on unmount
+  }, []);
 
   useEffect(() => {
     // Update grid and hovered cells on rotation
