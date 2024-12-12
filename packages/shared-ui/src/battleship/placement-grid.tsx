@@ -12,6 +12,9 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [grid, setGrid] = useState(placementService.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [playerService, setPlayerService] = useState<PlayerService | null>(
+    null
+  );
   const [socketService, setSocketService] = useState<SocketService | null>(
     null
   );
@@ -30,6 +33,7 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
       playerService.getPlayerId()
     );
     setSocketService(socketService);
+    setPlayerService(playerService);
 
     return () => {
       socketService.disconnect();
@@ -135,9 +139,15 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
       setStatusMessage('');
 
       if (placementService.isFleetCompleted()) {
-        setFleetCompleted(true);
-        setStatusMessage('Fleet completed! Sending to server...');
-        socketService?.placeFleet(placementService.getFleet());
+        const playerId = playerService?.getPlayerId();
+        console.log(`playerId:${playerId}`);
+        if (playerId) {
+          setFleetCompleted(true);
+          setStatusMessage('Fleet completed! Sending to server...');
+          socketService?.placeFleet(playerId, placementService.getFleet());
+        } else {
+          setStatusMessage("Invalid playerId! can't proceed!");
+        }
       }
     } else {
       setStatusMessage('Invalid placement. Try again!');

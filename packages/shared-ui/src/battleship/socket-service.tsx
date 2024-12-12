@@ -48,7 +48,7 @@ export class SocketService {
     this.socket.disconnect();
   }
 
-  placeFleet(data: ShipPlacement[]) {
-    this.socket?.emit('placeFleet', data);
+  placeFleet(playerId: string, fleet: ShipPlacement[]) {
+    this.socket?.emit('placeFleet', { playerId, fleet });
   }
 }

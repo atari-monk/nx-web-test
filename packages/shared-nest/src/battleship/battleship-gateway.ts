@@ -24,7 +24,7 @@ export class BattleshipGateway {
   handleJoinGame(client: Socket, data: { playerId: string }): void {
     const { playerId } = data;
     this.logger.debug(
-      `Client connected: ${client.id} with playerId: ${playerId}`
+      `Client connected: playerId: ${playerId}, socketId: ${client.id}`
     );
 
     // Check if the player already exists
@@ -84,9 +84,13 @@ export class BattleshipGateway {
   }
 
   @SubscribeMessage('placeFleet')
-  handlePlaceFleet(client: Socket, fleet: ShipPlacement[]): void {
-    this.logger.debug(`Fleet placement received from: ${client.id}`);
-    const player = this.players.find((p) => p.id === client.id);
+  handlePlaceFleet(
+    client: Socket,
+    data: { playerId: string; fleet: ShipPlacement[] }
+  ): void {
+    const { playerId, fleet } = data;
+    this.logger.debug(`Fleet placement received from playerId: ${playerId}`);
+    const player = this.players.find((p) => p.id === playerId);
 
     if (player && player.state === 'placement') {
       player.ships = fleet; // Store the fleet
