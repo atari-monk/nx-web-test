@@ -108,16 +108,34 @@ export class BattleshipGateway {
 
   private checkGameReady(): void {
     this.logger.debug('Checking if the game is ready to start.');
+
+    if (this.players.length < 2) {
+      this.logger.warn('Not enough players to start the game.');
+      return;
+    }
+
     if (this.players.every((p) => p.state === 'ready')) {
+      this.logger.debug('All players are ready. Starting the game.');
+
+      // Update players' states to 'in-turn'
       this.players.forEach((p) => (p.state = 'in-turn'));
-      this.currentTurnIndex = Math.floor(Math.random() * 2); // Randomly select the first player
+
+      // Randomly select the first player's turn
+      this.currentTurnIndex = Math.floor(Math.random() * this.players.length);
+
+      // Emit game start event
       this.server.emit('gameStart', {
         message: 'All players have placed their fleets. Game starts!',
         firstTurn: this.players[this.currentTurnIndex].id,
       });
+
       this.logger.debug(
-        `Game started. First turn: ${this.players[this.currentTurnIndex].id}`
+        `Game started successfully. First turn: Player ${
+          this.players[this.currentTurnIndex].id
+        }.`
       );
+    } else {
+      this.logger.log('Not all players are ready yet.');
     }
   }
 
