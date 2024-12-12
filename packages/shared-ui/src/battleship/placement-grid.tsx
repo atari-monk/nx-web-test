@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { PlacementService } from './placement-service';
+import { SocketService } from './socket-service';
+import { PlayerService } from './player-service';
 
 interface GridProps {
   gridSize: number;
 }
 
-function generatePlayerId(): string {
-  return `player-${Math.random().toString(36).substring(2, 15)}`;
-}
-
 const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
-  const [gameManager] = useState(() => new PlacementService(gridSize));
-  const [grid, setGrid] = useState(gameManager.getGrid());
+  const [placementService] = useState(() => new PlacementService(gridSize));
+  const [grid, setGrid] = useState(placementService.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socketService, setSocketService] = useState<SocketService | null>(
+    null
+  );
   const [hoveredCells, setHoveredCells] = useState<{ x: number; y: number }[]>(
     []
   );
@@ -25,52 +24,26 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   } | null>(null); // Track last hover position
 
   useEffect(() => {
-    const playerId = localStorage.getItem('playerId') || generatePlayerId();
-    localStorage.setItem('playerId', playerId);
-
-    const newSocket = io('http://localhost:3333', {
-      query: { playerId },
-    });
-
-    newSocket.on('connect', () => {
-      console.debug('Connected to the server');
-      newSocket.emit('joinGame', { playerId });
-    });
-
-    // Log all relevant events
-    const events = [
-      'joined',
-      'gameReady',
-      'fleetPlaced',
-      'gameStart',
-      'attackResult',
-      'attacked',
-      'turnChange',
-      'gameOver',
-      'error',
-    ];
-
-    events.forEach((event) => {
-      newSocket.on(event, (data) => {
-        console.debug(`Event received: ${event}`, data);
-      });
-    });
-
-    setSocket(newSocket);
+    const playerService = new PlayerService();
+    const socketService = new SocketService(
+      'http://localhost:3333',
+      playerService.getPlayerId()
+    );
+    setSocketService(socketService);
 
     return () => {
-      newSocket.disconnect();
+      socketService.disconnect();
     };
   }, []);
 
   useEffect(() => {
     // Update grid and hovered cells on rotation
-    gameManager.onShipRotation(() => {
-      setGrid([...gameManager.getGrid()]); // Trigger grid re-render
+    placementService.onShipRotation(() => {
+      setGrid([...placementService.getGrid()]); // Trigger grid re-render
       if (currentHover) {
         // Recalculate the preview for the last hovered position
-        const currentShip = gameManager.getCurrentShip();
-        const previewCells = gameManager.getShipPlacementPreview(
+        const currentShip = placementService.getCurrentShip();
+        const previewCells = placementService.getShipPlacementPreview(
           currentHover.x,
           currentHover.y,
           currentShip.size
@@ -78,16 +51,16 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
         setHoveredCells(previewCells);
       }
     });
-  }, [gameManager, currentHover]);
+  }, [placementService, currentHover]);
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.deltaY !== 0) {
-      gameManager.rotateShip(); // Rotate the ship
+      placementService.rotateShip(); // Rotate the ship
 
       // Update hovered cells immediately after rotation
       if (currentHover) {
-        const currentShip = gameManager.getCurrentShip();
-        const previewCells = gameManager.getShipPlacementPreview(
+        const currentShip = placementService.getCurrentShip();
+        const previewCells = placementService.getShipPlacementPreview(
           currentHover.x,
           currentHover.y,
           currentShip.size
@@ -96,42 +69,42 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
       }
 
       setStatusMessage(
-        `Ship rotated to ${gameManager.getCurrentShip().orientation}`
+        `Ship rotated to ${placementService.getCurrentShip().orientation}`
       );
-      setGrid([...gameManager.getGrid()]); // Update the grid immediately after rotation
+      setGrid([...placementService.getGrid()]); // Update the grid immediately after rotation
     }
   };
 
   const handleMouseOver = (x: number, y: number) => {
     setCurrentHover({ x, y }); // Store the last hovered position
 
-    const currentShip = gameManager.getCurrentShip();
-    let previewCells = gameManager.getShipPlacementPreview(
+    const currentShip = placementService.getCurrentShip();
+    let previewCells = placementService.getShipPlacementPreview(
       x,
       y,
       currentShip.size
     );
 
     // Check if the current orientation is valid
-    let isValidPlacement = gameManager.validatePlacement(
+    let isValidPlacement = placementService.validatePlacement(
       previewCells,
       currentShip.size
     );
 
     if (!isValidPlacement) {
       // Try rotating the ship
-      gameManager.rotateShip();
+      placementService.rotateShip();
       setStatusMessage(
-        `Ship rotated to ${gameManager.getCurrentShip().orientation}`
+        `Ship rotated to ${placementService.getCurrentShip().orientation}`
       );
-      previewCells = gameManager.getShipPlacementPreview(
+      previewCells = placementService.getShipPlacementPreview(
         x,
         y,
         currentShip.size
       );
 
       // Validate after rotation
-      isValidPlacement = gameManager.validatePlacement(
+      isValidPlacement = placementService.validatePlacement(
         previewCells,
         currentShip.size
       );
@@ -144,27 +117,27 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   };
 
   const handleMouseClick = (x: number, y: number) => {
-    const currentShip = gameManager.getCurrentShip();
-    const previewCells = gameManager.getShipPlacementPreview(
+    const currentShip = placementService.getCurrentShip();
+    const previewCells = placementService.getShipPlacementPreview(
       x,
       y,
       currentShip.size
     );
 
-    const isValidPlacement = gameManager.validatePlacement(
+    const isValidPlacement = placementService.validatePlacement(
       previewCells,
       currentShip.size
     );
     if (isValidPlacement) {
-      gameManager.placeShip(previewCells);
-      setGrid(gameManager.getGrid());
+      placementService.placeShip(previewCells);
+      setGrid(placementService.getGrid());
       setHoveredCells([]);
       setStatusMessage('');
 
-      if (gameManager.isFleetCompleted()) {
+      if (placementService.isFleetCompleted()) {
         setFleetCompleted(true);
         setStatusMessage('Fleet completed! Sending to server...');
-        socket?.emit('placeFleet', gameManager.getFleet());
+        socketService?.placeFleet(placementService.getFleet());
       }
     } else {
       setStatusMessage('Invalid placement. Try again!');
@@ -174,8 +147,8 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   return (
     <div onWheel={handleWheel}>
       <h2>
-        Place your {gameManager.getCurrentShip()?.name} (
-        {gameManager.getCurrentShip()?.size}x1) | {statusMessage}
+        Place your {placementService.getCurrentShip()?.name} (
+        {placementService.getCurrentShip()?.size}x1) | {statusMessage}
       </h2>
       <div
         className="battleship-grid"
@@ -196,9 +169,9 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
                 (hoveredCell) =>
                   hoveredCell.x === rowIndex && hoveredCell.y === colIndex
               ) &&
-              gameManager.validatePlacement(
+              placementService.validatePlacement(
                 hoveredCells,
-                gameManager.getCurrentShip().size
+                placementService.getCurrentShip().size
               );
             return (
               <div
