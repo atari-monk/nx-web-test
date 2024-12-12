@@ -96,8 +96,9 @@ export class BattleshipGateway {
 
       this.checkGameReady();
     } else {
-      client.emit('error', 'Invalid action or player not found.');
-      this.logger.debug(`Fleet placement error for player: ${client.id}`);
+      const msg = `Fleet placement error for player: ${client.id}`;
+      client.emit('error', msg);
+      this.logger.debug(msg);
     }
   }
 
