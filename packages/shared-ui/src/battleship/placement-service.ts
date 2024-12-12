@@ -1,6 +1,6 @@
 import { Cell, Ship, ShipPlacement } from '@nx-web-test/shared';
 
-export class PlacementManager {
+export class PlacementService {
   private gridSize: number;
   private grid: Cell[][];
   private fleet: ShipPlacement[] = [];
@@ -18,12 +18,19 @@ export class PlacementManager {
 
   constructor(gridSize: number) {
     this.gridSize = gridSize;
-    this.grid = Array.from({ length: gridSize }, (_, rowIndex) =>
-      Array.from({ length: gridSize }, (_, colIndex) => ({
-        id: rowIndex * gridSize + colIndex,
+    this.grid = this.createEmptyGrid(gridSize);
+  }
+
+  private createEmptyGrid(size: number): Cell[][] {
+    let idCounter = 0; // Unique ID counter for each cell
+    const grid = Array.from({ length: size }, (_, rowIndex) =>
+      Array.from({ length: size }, (_, colIndex) => ({
+        id: idCounter++, // Assign a unique ID to each cell
         occupied: false,
+        hit: false,
       }))
     );
+    return grid;
   }
 
   getGrid() {

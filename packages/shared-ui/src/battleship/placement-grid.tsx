@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { PlacementManager } from './placement-manager';
+import { PlacementService } from './placement-service';
 
 interface GridProps {
   gridSize: number;
@@ -11,7 +11,7 @@ function generatePlayerId(): string {
 }
 
 const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
-  const [gameManager] = useState(() => new PlacementManager(gridSize));
+  const [gameManager] = useState(() => new PlacementService(gridSize));
   const [grid, setGrid] = useState(gameManager.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
