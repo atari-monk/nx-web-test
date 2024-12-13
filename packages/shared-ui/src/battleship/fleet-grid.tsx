@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FleetService } from './fleet-service';
 import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
@@ -24,33 +24,43 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
   } | null>(null);
 
   useEffect(() => {
-    const playerService = new PlayerService();
-    const socketService = new SocketService(
+    const playerServiceInstance = new PlayerService();
+    const socketServiceInstance = new SocketService(
       'http://localhost:3333',
-      playerService.getPlayerId()
+      playerServiceInstance.getPlayerId()
     );
-    setSocketService(socketService);
-    setPlayerService(playerService);
+    setSocketService(socketServiceInstance);
+    setPlayerService(playerServiceInstance);
 
     return () => {
-      socketService.disconnect();
+      socketServiceInstance.disconnect();
     };
   }, []);
 
+  const handleShipRotation = useCallback(() => {
+    setGrid([...fleetService.getGrid()]);
+    if (currentHover) {
+      const previewCells = fleetService.getShipPlacementPreview(
+        currentHover.x,
+        currentHover.y,
+        fleetService.getCurrentShip().size
+      );
+      setHoveredCells(previewCells);
+    }
+  }, [currentHover, fleetService]);
+
   useEffect(() => {
-    fleetService.onShipRotation(() => {
-      setGrid([...fleetService.getGrid()]);
-      if (currentHover) {
-        const currentShip = fleetService.getCurrentShip();
-        const previewCells = fleetService.getShipPlacementPreview(
-          currentHover.x,
-          currentHover.y,
-          currentShip.size
-        );
-        setHoveredCells(previewCells);
+    fleetService.onShipRotation(handleShipRotation);
+
+    return () => {
+      if (fleetService.onShipRotationCallbacks) {
+        fleetService.onShipRotationCallbacks =
+          fleetService.onShipRotationCallbacks.filter(
+            (callback) => callback !== handleShipRotation
+          );
       }
-    });
-  }, [fleetService, currentHover]);
+    };
+  }, [handleShipRotation, fleetService]);
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.deltaY !== 0 && currentHover) {
@@ -68,16 +78,11 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
     const previewCells = fleetService.getValidShipPreview(x, y);
     setHoveredCells(previewCells);
     const ship = fleetService.getCurrentShip();
-    const shipName = ship?.name;
-    const shipSize = ship?.size;
-    sendMessage(`Place your ${shipName} (${shipSize}x1)`);
+    sendMessage(`Place your ${ship?.name} (${ship?.size}x1)`);
   };
 
   const handleMouseClick = (x: number, y: number) => {
-    const { success } = fleetService.placeAndValidateShip(
-      x,
-      y
-    );
+    const { success } = fleetService.placeAndValidateShip(x, y);
     if (success) {
       setGrid([...fleetService.getGrid()]);
       setHoveredCells([]);
@@ -89,13 +94,27 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
           sendMessage('Fleet position completed!');
           socketService?.placeFleet(playerId, fleetService.getFleet());
         } else {
-          sendMessage("Invalid playerId! can't proceed!");
+          sendMessage("Invalid playerId! Can't proceed!");
         }
       }
     } else {
       sendMessage('Invalid placement. Try again!');
     }
   };
+
+  const getCellStyle = (isHovered: boolean, isValid: boolean, cell: any) => ({
+    width: '30px',
+    height: '30px',
+    border: '1px solid #ccc',
+    backgroundColor: isHovered
+      ? isValid
+        ? 'green'
+        : 'red'
+      : cell.occupied
+      ? 'blue'
+      : 'white',
+    cursor: 'pointer',
+  });
 
   return (
     <div onWheel={handleWheel}>
@@ -114,32 +133,18 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
                 hoveredCell.x === rowIndex && hoveredCell.y === colIndex
             );
             const isValid =
-              hoveredCells.some(
-                (hoveredCell) =>
-                  hoveredCell.x === rowIndex && hoveredCell.y === colIndex
-              ) &&
+              isHovered &&
               fleetService.validatePlacement(
                 hoveredCells,
                 fleetService.getCurrentShip().size
               );
+
             return (
               <div
                 key={cell.id}
                 onClick={() => handleMouseClick(rowIndex, colIndex)}
                 onMouseEnter={() => handleMouseOver(rowIndex, colIndex)}
-                style={{
-                  width: '30px',
-                  height: '30px',
-                  border: '1px solid #ccc',
-                  backgroundColor: isHovered
-                    ? isValid
-                      ? 'green'
-                      : 'red'
-                    : cell.occupied
-                    ? 'blue'
-                    : 'white',
-                  cursor: 'pointer',
-                }}
+                style={getCellStyle(isHovered, isValid, cell)}
               />
             );
           })

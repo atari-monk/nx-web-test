@@ -1,6 +1,6 @@
 import {
   Chat,
-  PlacementGrid,
+  FleetGrid,
   MessageDisplay,
   SocketStatus,
 } from '@nx-web-test/shared-ui';
@@ -8,7 +8,7 @@ import {
 export function App() {
   return (
     <div>
-      <PlacementGrid gridSize={10} />
+      <FleetGrid gridSize={10} />
       <MessageDisplay />
 
       {/* <Chat /> */}

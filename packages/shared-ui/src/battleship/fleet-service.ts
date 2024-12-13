@@ -14,7 +14,7 @@ export class FleetService {
     { name: 'Carrier', size: 5, orientation: 'horizontal' },
   ];
 
-  private onShipRotationCallbacks: (() => void)[] = [];
+  onShipRotationCallbacks: (() => void)[] = [];
 
   constructor(gridSize: number) {
     this.gridSize = gridSize;
