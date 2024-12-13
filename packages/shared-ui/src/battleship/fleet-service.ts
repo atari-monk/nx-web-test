@@ -1,8 +1,7 @@
-import { Cell, Ship, ShipPlacement } from '@nx-web-test/shared';
+import { Cell, Ship, ShipPlacement, Grid } from '@nx-web-test/shared';
 
 export class FleetService {
-  private gridSize: number;
-  private grid: Cell[][];
+  private grid: Grid; // Use Grid type here
   private fleet: ShipPlacement[] = [];
   private currentShipIndex = 0;
 
@@ -17,24 +16,24 @@ export class FleetService {
   onShipRotationCallbacks: (() => void)[] = [];
 
   constructor(gridSize: number) {
-    this.gridSize = gridSize;
     this.grid = this.createEmptyGrid(gridSize);
   }
 
-  private createEmptyGrid(size: number): Cell[][] {
+  private createEmptyGrid(size: number): Grid {
     let idCounter = 0; // Unique ID counter for each cell
-    const grid = Array.from({ length: size }, (_, rowIndex) =>
+    const grid: Cell[][] = Array.from({ length: size }, (_, rowIndex) =>
       Array.from({ length: size }, (_, colIndex) => ({
         id: idCounter++, // Assign a unique ID to each cell
         occupied: false,
         hit: false,
       }))
     );
-    return grid;
+
+    return { size, cells: grid }; // Return Grid type
   }
 
   getGrid() {
-    return this.grid;
+    return this.grid; // Return the whole Grid object
   }
 
   getFleet() {
@@ -51,7 +50,7 @@ export class FleetService {
 
     // Mark cells as occupied
     selectedCells.forEach(({ x, y }) => {
-      this.grid[x][y].occupied = true;
+      this.grid.cells[x][y].occupied = true; // Access grid via grid.cells
     });
 
     // Add ship to fleet
@@ -103,10 +102,10 @@ export class FleetService {
       this.getAdjacentCells(x, y).some(
         ({ x: adjX, y: adjY }) =>
           adjX >= 0 &&
-          adjX < this.gridSize &&
+          adjX < this.grid.size &&
           adjY >= 0 &&
-          adjY < this.gridSize &&
-          this.grid[adjX][adjY].occupied
+          adjY < this.grid.size &&
+          this.grid.cells[adjX][adjY].occupied
       )
     );
   }
@@ -135,13 +134,13 @@ export class FleetService {
     const cells: { x: number; y: number }[] = [];
 
     if (orientation === 'horizontal') {
-      if (y + size <= this.gridSize) {
+      if (y + size <= this.grid.size) {
         for (let i = 0; i < size; i++) {
           cells.push({ x, y: y + i });
         }
       }
     } else if (orientation === 'vertical') {
-      if (x + size <= this.gridSize) {
+      if (x + size <= this.grid.size) {
         for (let i = 0; i < size; i++) {
           cells.push({ x: x + i, y });
         }
@@ -189,25 +188,5 @@ export class FleetService {
       return { success: true };
     }
     return { success: false };
-  }
-
-  getFleetData(): string {
-    return this.fleet
-      .map((placement) => {
-        return `Ship: ${placement.shipType}, Size: ${placement.size}, Position: (${placement.x}, ${placement.y}), Orientation: ${placement.orientation}`;
-      })
-      .join('\n');
-  }
-
-  printGridWithFleet(): void {
-    const gridRepresentation = this.grid
-      .map((row) => row.map((cell) => (cell.occupied ? 'X' : '.')).join(' '))
-      .join('\n');
-
-    console.log('Grid with Fleet:');
-    console.log(gridRepresentation);
-
-    console.log('\nFleet Placement Data:');
-    console.log(this.getFleetData());
   }
 }

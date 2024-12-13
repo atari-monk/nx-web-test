@@ -4,6 +4,7 @@ import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
 import { GridProps } from './GridProps';
+import { Cell, FleetUtils } from '@nx-web-test/shared';
 
 const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [fleetService] = useState(() => new FleetService(gridSize));
@@ -38,7 +39,7 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
   }, []);
 
   const handleShipRotation = useCallback(() => {
-    setGrid([...fleetService.getGrid()]);
+    setGrid(fleetService.getGrid()); // Update grid state from fleetService
     if (currentHover) {
       const previewCells = fleetService.getShipPlacementPreview(
         currentHover.x,
@@ -69,7 +70,7 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
         currentHover.y
       );
       setHoveredCells(previewCells);
-      setGrid([...fleetService.getGrid()]);
+      setGrid(fleetService.getGrid()); // Update grid on rotation
     }
   };
 
@@ -84,7 +85,7 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
   const handleMouseClick = (x: number, y: number) => {
     const { success } = fleetService.placeAndValidateShip(x, y);
     if (success) {
-      setGrid([...fleetService.getGrid()]);
+      setGrid(fleetService.getGrid()); // Update grid after placing ship
       setHoveredCells([]);
 
       if (fleetService.isFleetCompleted()) {
@@ -93,7 +94,10 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
           setFleetCompleted(true);
           sendMessage('Fleet position completed!');
           socketService?.placeFleet(playerId, fleetService.getFleet());
-          fleetService.printGridWithFleet();
+          FleetUtils.printGridWithFleet(
+            fleetService.getGrid(),
+            fleetService.getFleet()
+          );
         } else {
           sendMessage("Invalid playerId! Can't proceed!");
         }
@@ -103,7 +107,7 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
     }
   };
 
-  const getCellStyle = (isHovered: boolean, isValid: boolean, cell: any) => ({
+  const getCellStyle = (isHovered: boolean, isValid: boolean, cell: Cell) => ({
     width: '30px',
     height: '30px',
     border: '1px solid #ccc',
@@ -127,7 +131,7 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
           pointerEvents: fleetCompleted ? 'none' : 'auto',
         }}
       >
-        {grid.map((row, rowIndex) =>
+        {grid.cells.map((row, rowIndex) =>
           row.map((cell, colIndex) => {
             const isHovered = hoveredCells.some(
               (hoveredCell) =>
