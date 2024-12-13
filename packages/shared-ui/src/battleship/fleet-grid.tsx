@@ -6,8 +6,8 @@ import { sendMessage } from './sender';
 import { GridProps } from './GridProps';
 
 const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
-  const [placementService] = useState(() => new FleetService(gridSize));
-  const [grid, setGrid] = useState(placementService.getGrid());
+  const [fleetService] = useState(() => new FleetService(gridSize));
+  const [grid, setGrid] = useState(fleetService.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
   const [playerService, setPlayerService] = useState<PlayerService | null>(
     null
@@ -38,11 +38,11 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
   }, []);
 
   useEffect(() => {
-    placementService.onShipRotation(() => {
-      setGrid([...placementService.getGrid()]);
+    fleetService.onShipRotation(() => {
+      setGrid([...fleetService.getGrid()]);
       if (currentHover) {
-        const currentShip = placementService.getCurrentShip();
-        const previewCells = placementService.getShipPlacementPreview(
+        const currentShip = fleetService.getCurrentShip();
+        const previewCells = fleetService.getShipPlacementPreview(
           currentHover.x,
           currentHover.y,
           currentShip.size
@@ -50,44 +50,44 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
         setHoveredCells(previewCells);
       }
     });
-  }, [placementService, currentHover]);
+  }, [fleetService, currentHover]);
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.deltaY !== 0 && currentHover) {
-      const previewCells = placementService.rotateAndPreviewShip(
+      const previewCells = fleetService.rotateAndPreviewShip(
         currentHover.x,
         currentHover.y
       );
       setHoveredCells(previewCells);
-      setGrid([...placementService.getGrid()]);
+      setGrid([...fleetService.getGrid()]);
     }
   };
 
   const handleMouseOver = (x: number, y: number) => {
     setCurrentHover({ x, y });
-    const previewCells = placementService.getValidShipPreview(x, y);
+    const previewCells = fleetService.getValidShipPreview(x, y);
     setHoveredCells(previewCells);
-    const ship = placementService.getCurrentShip();
+    const ship = fleetService.getCurrentShip();
     const shipName = ship?.name;
     const shipSize = ship?.size;
     sendMessage(`Place your ${shipName} (${shipSize}x1)`);
   };
 
   const handleMouseClick = (x: number, y: number) => {
-    const { success, previewCells } = placementService.placeAndValidateShip(
+    const { success } = fleetService.placeAndValidateShip(
       x,
       y
     );
     if (success) {
-      setGrid([...placementService.getGrid()]);
+      setGrid([...fleetService.getGrid()]);
       setHoveredCells([]);
 
-      if (placementService.isFleetCompleted()) {
+      if (fleetService.isFleetCompleted()) {
         const playerId = playerService?.getPlayerId();
         if (playerId) {
           setFleetCompleted(true);
           sendMessage('Fleet position completed!');
-          socketService?.placeFleet(playerId, placementService.getFleet());
+          socketService?.placeFleet(playerId, fleetService.getFleet());
         } else {
           sendMessage("Invalid playerId! can't proceed!");
         }
@@ -118,9 +118,9 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
                 (hoveredCell) =>
                   hoveredCell.x === rowIndex && hoveredCell.y === colIndex
               ) &&
-              placementService.validatePlacement(
+              fleetService.validatePlacement(
                 hoveredCells,
-                placementService.getCurrentShip().size
+                fleetService.getCurrentShip().size
               );
             return (
               <div

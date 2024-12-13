@@ -186,7 +186,7 @@ export class FleetService {
 
     if (this.validatePlacement(previewCells, currentShip.size)) {
       this.placeShip(previewCells);
-      return { success: true, previewCells };
+      return { success: true };
     }
     return { success: false };
   }
