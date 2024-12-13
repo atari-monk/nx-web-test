@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PlacementService } from './placement-service';
 import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
+import { sendMessage } from './sender';
 
 interface GridProps {
   gridSize: number;
@@ -11,7 +12,6 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [placementService] = useState(() => new PlacementService(gridSize));
   const [grid, setGrid] = useState(placementService.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
   const [playerService, setPlayerService] = useState<PlayerService | null>(
     null
   );
@@ -24,7 +24,7 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [currentHover, setCurrentHover] = useState<{
     x: number;
     y: number;
-  } | null>(null); // Track last hover position
+  } | null>(null);
 
   useEffect(() => {
     const playerService = new PlayerService();
@@ -41,11 +41,9 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   }, []);
 
   useEffect(() => {
-    // Update grid and hovered cells on rotation
     placementService.onShipRotation(() => {
-      setGrid([...placementService.getGrid()]); // Trigger grid re-render
+      setGrid([...placementService.getGrid()]);
       if (currentHover) {
-        // Recalculate the preview for the last hovered position
         const currentShip = placementService.getCurrentShip();
         const previewCells = placementService.getShipPlacementPreview(
           currentHover.x,
@@ -59,9 +57,7 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.deltaY !== 0) {
-      placementService.rotateShip(); // Rotate the ship
-
-      // Update hovered cells immediately after rotation
+      placementService.rotateShip();
       if (currentHover) {
         const currentShip = placementService.getCurrentShip();
         const previewCells = placementService.getShipPlacementPreview(
@@ -71,16 +67,12 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
         );
         setHoveredCells(previewCells);
       }
-
-      setStatusMessage(
-        `Ship rotated to ${placementService.getCurrentShip().orientation}`
-      );
-      setGrid([...placementService.getGrid()]); // Update the grid immediately after rotation
+      setGrid([...placementService.getGrid()]);
     }
   };
 
   const handleMouseOver = (x: number, y: number) => {
-    setCurrentHover({ x, y }); // Store the last hovered position
+    setCurrentHover({ x, y });
 
     const currentShip = placementService.getCurrentShip();
     let previewCells = placementService.getShipPlacementPreview(
@@ -89,25 +81,19 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
       currentShip.size
     );
 
-    // Check if the current orientation is valid
     let isValidPlacement = placementService.validatePlacement(
       previewCells,
       currentShip.size
     );
 
     if (!isValidPlacement) {
-      // Try rotating the ship
       placementService.rotateShip();
-      setStatusMessage(
-        `Ship rotated to ${placementService.getCurrentShip().orientation}`
-      );
       previewCells = placementService.getShipPlacementPreview(
         x,
         y,
         currentShip.size
       );
 
-      // Validate after rotation
       isValidPlacement = placementService.validatePlacement(
         previewCells,
         currentShip.size
@@ -115,9 +101,8 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
     }
 
     setHoveredCells(previewCells);
-    setStatusMessage(
-      isValidPlacement ? 'Valid placement!' : 'Invalid placement.'
-    );
+    sendMessage(`Place your ${placementService.getCurrentShip()?.name} (
+        ${placementService.getCurrentShip()?.size}x1)`);
   };
 
   const handleMouseClick = (x: number, y: number) => {
@@ -136,30 +121,25 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
       placementService.placeShip(previewCells);
       setGrid(placementService.getGrid());
       setHoveredCells([]);
-      setStatusMessage('');
 
       if (placementService.isFleetCompleted()) {
         const playerId = playerService?.getPlayerId();
         console.log(`playerId:${playerId}`);
         if (playerId) {
           setFleetCompleted(true);
-          setStatusMessage('Fleet completed! Sending to server...');
+          sendMessage('Fleet position completed!');
           socketService?.placeFleet(playerId, placementService.getFleet());
         } else {
-          setStatusMessage("Invalid playerId! can't proceed!");
+          sendMessage("Invalid playerId! can't proceed!");
         }
       }
     } else {
-      setStatusMessage('Invalid placement. Try again!');
+      sendMessage('Invalid placement. Try again!');
     }
   };
 
   return (
     <div onWheel={handleWheel}>
-      <h2>
-        Place your {placementService.getCurrentShip()?.name} (
-        {placementService.getCurrentShip()?.size}x1) | {statusMessage}
-      </h2>
       <div
         className="battleship-grid"
         style={{
