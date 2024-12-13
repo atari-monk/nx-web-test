@@ -6,10 +6,12 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { Cell, Grid, Player, ShipPlacement } from '@nx-web-test/shared';
+import { GameStateService } from './game-state-service';
+import { FileHelperService } from './file-helper-service';
 
 @WebSocketGateway({
   cors: {
-    origin: '*', // Allow all origins (configure this in production)
+    origin: '*',
   },
 })
 export class BattleshipGateway {
@@ -18,7 +20,12 @@ export class BattleshipGateway {
 
   private logger = new Logger(BattleshipGateway.name);
   private players: Player[] = [];
-  private currentTurnIndex = 0; // Tracks the current player's turn
+  private currentTurnIndex = 0;
+
+  constructor(
+    private readonly gameStateService: GameStateService,
+    private readonly fileHelperService: FileHelperService
+  ) {}
 
   @SubscribeMessage('joinGame')
   handleJoinGame(client: Socket, data: { playerId: string }): void {
@@ -27,18 +34,30 @@ export class BattleshipGateway {
       `Client connected: playerId: ${playerId}, socketId: ${client.id}`
     );
 
-    // Check if the player already exists
     const existingPlayer = this.players.find((p) => p.id === playerId);
 
     if (existingPlayer) {
-      // Update the socket ID for the existing player
       existingPlayer.socketId = client.id;
+
+      //todo: move this to private method handling save state
+      const savedState = this.gameStateService.getPlayerState(playerId);
+      if (savedState) {
+        existingPlayer.grid.cells = savedState.grid;
+        existingPlayer.ships = savedState.ships;
+        client.emit('loadState', {
+          grid: savedState.grid,
+          ships: savedState.ships,
+        });
+        this.logger.debug(`Loaded state for player: ${playerId}`);
+      }
+
       client.emit('joined', { message: 'Reconnected to the game!' });
       this.logger.debug(`Player reconnected: ${playerId}`);
       return;
     }
 
     if (this.players.length < 2) {
+      //todo: move this to private method handling player adding
       const player: Player = {
         id: playerId,
         socketId: client.id,
@@ -51,6 +70,7 @@ export class BattleshipGateway {
       this.logger.debug(`Player added: ${player.id}`);
 
       if (this.players.length === 2) {
+        //todo: move this to private method handling game ready
         this.server.emit(
           'gameReady',
           'Both players have joined. Place your fleets!'
@@ -58,6 +78,7 @@ export class BattleshipGateway {
         this.logger.debug('Both players have joined the game.');
       }
     } else {
+      //todo: move this to private method handling game full
       client.emit('error', 'Game is already full!');
       this.logger.debug('Game is already full.');
     }
@@ -70,7 +91,6 @@ export class BattleshipGateway {
       const player = this.players[playerIndex];
       this.logger.debug(`Player disconnected: ${player.id}`);
 
-      // Optionally, remove the player if they don't reconnect within a grace period
       setTimeout(() => {
         const stillDisconnected = !this.players.find(
           (p) => p.socketId === client.id
@@ -79,7 +99,7 @@ export class BattleshipGateway {
           this.players.splice(playerIndex, 1);
           this.logger.debug(`Player removed after grace period: ${player.id}`);
         }
-      }, 30000); // 30 seconds grace period
+      }, 30000);
     }
   }
 
@@ -93,8 +113,11 @@ export class BattleshipGateway {
     const player = this.players.find((p) => p.id === playerId);
 
     if (player && player.state === 'placement') {
-      player.ships = fleet; // Store the fleet
+      player.ships = fleet;
       player.state = 'ready';
+
+      this.gameStateService.savePlayerState(playerId, player.grid.cells, fleet);
+
       client.emit('fleetPlaced', 'Fleet placement complete!');
       this.logger.debug(`Fleet placed for player: ${client.id}`);
 
@@ -114,16 +137,15 @@ export class BattleshipGateway {
       return;
     }
 
+    this.fileHelperService.createFileWithPlayerData('fleet_state_debug.json');
+
     if (this.players.every((p) => p.state === 'ready')) {
       this.logger.debug('All players are ready. Starting the game.');
 
-      // Update players' states to 'in-turn'
       this.players.forEach((p) => (p.state = 'in-turn'));
 
-      // Randomly select the first player's turn
       this.currentTurnIndex = Math.floor(Math.random() * this.players.length);
 
-      // Emit game start event
       this.server.emit('gameStart', {
         message: 'All players have placed their fleets. Game starts!',
         firstTurn: this.players[this.currentTurnIndex].id,
@@ -191,7 +213,6 @@ export class BattleshipGateway {
       this.logger.debug(`Attack result: miss at (${x}, ${y}) by: ${client.id}`);
     }
 
-    // Switch turns
     this.currentTurnIndex = (this.currentTurnIndex + 1) % 2;
     this.server.emit('turnChange', this.players[this.currentTurnIndex].id);
     this.logger.debug(
@@ -224,10 +245,10 @@ export class BattleshipGateway {
   }
 
   private createEmptyGrid(size: number): Cell[][] {
-    let idCounter = 0; // Unique ID counter for each cell
+    let idCounter = 0;
     const grid = Array.from({ length: size }, (_, rowIndex) =>
       Array.from({ length: size }, (_, colIndex) => ({
-        id: idCounter++, // Assign a unique ID to each cell
+        id: idCounter++,
         occupied: false,
         hit: false,
       }))
