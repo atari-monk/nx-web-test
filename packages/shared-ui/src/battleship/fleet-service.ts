@@ -164,4 +164,30 @@ export class FleetService {
   onShipRotation(callback: () => void) {
     this.onShipRotationCallbacks.push(callback);
   }
+
+  rotateAndPreviewShip(x: number, y: number) {
+    this.rotateShip();
+    return this.getShipPlacementPreview(x, y, this.getCurrentShip().size);
+  }
+
+  getValidShipPreview(x: number, y: number): { x: number; y: number }[] {
+    const currentShip = this.getCurrentShip();
+    let previewCells = this.getShipPlacementPreview(x, y, currentShip.size);
+    if (!this.validatePlacement(previewCells, currentShip.size)) {
+      this.rotateShip();
+      previewCells = this.getShipPlacementPreview(x, y, currentShip.size);
+    }
+    return previewCells;
+  }
+
+  placeAndValidateShip(x: number, y: number) {
+    const currentShip = this.getCurrentShip();
+    const previewCells = this.getShipPlacementPreview(x, y, currentShip.size);
+
+    if (this.validatePlacement(previewCells, currentShip.size)) {
+      this.placeShip(previewCells);
+      return { success: true, previewCells };
+    }
+    return { success: false };
+  }
 }

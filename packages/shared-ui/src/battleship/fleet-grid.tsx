@@ -3,10 +3,7 @@ import { FleetService } from './fleet-service';
 import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
-
-interface GridProps {
-  gridSize: number;
-}
+import { GridProps } from './GridProps';
 
 const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
   const [placementService] = useState(() => new FleetService(gridSize));
@@ -56,75 +53,37 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
   }, [placementService, currentHover]);
 
   const handleWheel = (e: React.WheelEvent) => {
-    if (e.deltaY !== 0) {
-      placementService.rotateShip();
-      if (currentHover) {
-        const currentShip = placementService.getCurrentShip();
-        const previewCells = placementService.getShipPlacementPreview(
-          currentHover.x,
-          currentHover.y,
-          currentShip.size
-        );
-        setHoveredCells(previewCells);
-      }
+    if (e.deltaY !== 0 && currentHover) {
+      const previewCells = placementService.rotateAndPreviewShip(
+        currentHover.x,
+        currentHover.y
+      );
+      setHoveredCells(previewCells);
       setGrid([...placementService.getGrid()]);
     }
   };
 
   const handleMouseOver = (x: number, y: number) => {
     setCurrentHover({ x, y });
-
-    const currentShip = placementService.getCurrentShip();
-    let previewCells = placementService.getShipPlacementPreview(
-      x,
-      y,
-      currentShip.size
-    );
-
-    let isValidPlacement = placementService.validatePlacement(
-      previewCells,
-      currentShip.size
-    );
-
-    if (!isValidPlacement) {
-      placementService.rotateShip();
-      previewCells = placementService.getShipPlacementPreview(
-        x,
-        y,
-        currentShip.size
-      );
-
-      isValidPlacement = placementService.validatePlacement(
-        previewCells,
-        currentShip.size
-      );
-    }
-
+    const previewCells = placementService.getValidShipPreview(x, y);
     setHoveredCells(previewCells);
-    sendMessage(`Place your ${placementService.getCurrentShip()?.name} (
-        ${placementService.getCurrentShip()?.size}x1)`);
+    const ship = placementService.getCurrentShip();
+    const shipName = ship?.name;
+    const shipSize = ship?.size;
+    sendMessage(`Place your ${shipName} (${shipSize}x1)`);
   };
 
   const handleMouseClick = (x: number, y: number) => {
-    const currentShip = placementService.getCurrentShip();
-    const previewCells = placementService.getShipPlacementPreview(
+    const { success, previewCells } = placementService.placeAndValidateShip(
       x,
-      y,
-      currentShip.size
+      y
     );
-
-    const isValidPlacement = placementService.validatePlacement(
-      previewCells,
-      currentShip.size
-    );
-    if (isValidPlacement) {
-      placementService.placeShip(previewCells);
-      setGrid(placementService.getGrid());
+    if (success) {
+      setGrid([...placementService.getGrid()]);
       setHoveredCells([]);
 
       if (placementService.isFleetCompleted()) {
         const playerId = playerService?.getPlayerId();
-        console.log(`playerId:${playerId}`);
         if (playerId) {
           setFleetCompleted(true);
           sendMessage('Fleet position completed!');
