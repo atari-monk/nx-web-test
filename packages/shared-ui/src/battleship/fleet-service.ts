@@ -1,6 +1,6 @@
 import { Cell, Ship, ShipPlacement } from '@nx-web-test/shared';
 
-export class PlacementService {
+export class FleetService {
   private gridSize: number;
   private grid: Cell[][];
   private fleet: ShipPlacement[] = [];

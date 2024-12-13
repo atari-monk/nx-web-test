@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlacementService } from './placement-service';
+import { FleetService } from './fleet-service';
 import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
@@ -8,8 +8,8 @@ interface GridProps {
   gridSize: number;
 }
 
-const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
-  const [placementService] = useState(() => new PlacementService(gridSize));
+const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
+  const [placementService] = useState(() => new FleetService(gridSize));
   const [grid, setGrid] = useState(placementService.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
   const [playerService, setPlayerService] = useState<PlayerService | null>(
@@ -190,4 +190,4 @@ const PlacementGrid: React.FC<GridProps> = ({ gridSize }) => {
   );
 };
 
-export default PlacementGrid;
+export default FleetGrid;
