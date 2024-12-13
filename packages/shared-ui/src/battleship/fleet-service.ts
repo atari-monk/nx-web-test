@@ -190,4 +190,24 @@ export class FleetService {
     }
     return { success: false };
   }
+
+  getFleetData(): string {
+    return this.fleet
+      .map((placement) => {
+        return `Ship: ${placement.shipType}, Size: ${placement.size}, Position: (${placement.x}, ${placement.y}), Orientation: ${placement.orientation}`;
+      })
+      .join('\n');
+  }
+
+  printGridWithFleet(): void {
+    const gridRepresentation = this.grid
+      .map((row) => row.map((cell) => (cell.occupied ? 'X' : '.')).join(' '))
+      .join('\n');
+
+    console.log('Grid with Fleet:');
+    console.log(gridRepresentation);
+
+    console.log('\nFleet Placement Data:');
+    console.log(this.getFleetData());
+  }
 }
