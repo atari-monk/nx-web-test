@@ -1,4 +1,4 @@
-import { ShipPlacement } from '@nx-web-test/shared';
+import { Grid, ShipPlacement } from '@nx-web-test/shared';
 import { io, Socket } from 'socket.io-client';
 
 export class SocketService {
@@ -48,7 +48,7 @@ export class SocketService {
     this.socket.disconnect();
   }
 
-  placeFleet(playerId: string, fleet: ShipPlacement[]) {
-    this.socket?.emit('placeFleet', { playerId, fleet });
+  placeFleet(data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }) {
+    this.socket?.emit('placeFleet', data);
   }
 }

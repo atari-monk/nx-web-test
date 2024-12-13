@@ -5,7 +5,13 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
-import { Cell, Grid, Player, ShipPlacement } from '@nx-web-test/shared';
+import {
+  Cell,
+  FleetUtils,
+  Grid,
+  Player,
+  ShipPlacement,
+} from '@nx-web-test/shared';
 import { GameStateService } from './game-state-service';
 import { FileHelperService } from './file-helper-service';
 
@@ -106,17 +112,20 @@ export class BattleshipGateway {
   @SubscribeMessage('placeFleet')
   handlePlaceFleet(
     client: Socket,
-    data: { playerId: string; fleet: ShipPlacement[] }
+    data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }
   ): void {
-    const { playerId, fleet } = data;
+    const { playerId, grid, fleet } = data;
     this.logger.debug(`Fleet placement received from playerId: ${playerId}`);
     const player = this.players.find((p) => p.id === playerId);
 
     if (player && player.state === 'placement') {
+      player.grid = grid;
       player.ships = fleet;
       player.state = 'ready';
 
       this.gameStateService.savePlayerState(playerId, player.grid.cells, fleet);
+
+      FleetUtils.printGridWithFleet(player.grid, fleet);
 
       client.emit('fleetPlaced', 'Fleet placement complete!');
       this.logger.debug(`Fleet placed for player: ${client.id}`);
