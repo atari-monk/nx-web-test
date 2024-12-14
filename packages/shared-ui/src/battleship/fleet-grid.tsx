@@ -3,10 +3,10 @@ import { FleetService } from './fleet-service';
 import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
-import { GridProps } from './GridProps';
+import { FleetGridProps } from './fleet-grid-props';
 import { Cell, FleetUtils } from '@nx-web-test/shared';
 
-const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
+const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
   const [fleetService] = useState(() => new FleetService(gridSize));
   const [grid, setGrid] = useState(fleetService.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
@@ -92,7 +92,9 @@ const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
         const playerId = playerService?.getPlayerId();
         if (playerId) {
           setFleetCompleted(true);
-          sendMessage('Fleet position completed!');
+          if (fleetService.isFleetCompleted()) {
+            onFleetComplete();
+          }
           socketService?.placeFleet({
             playerId,
             grid: fleetService.getGrid(),
