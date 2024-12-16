@@ -1,11 +1,24 @@
 import { Grid, ShipPlacement } from '@nx-web-test/shared';
 import { io, Socket } from 'socket.io-client';
+import { PlayerService } from './player-service';
 
 export class SocketService {
+  private static instance: SocketService;
   private socket: Socket;
 
-  constructor(serverUrl: string, playerId: string) {
+  private constructor(serverUrl: string, playerId: string) {
     this.socket = this.connectToServer(serverUrl, playerId);
+  }
+
+  public static getInstance(): SocketService {
+    if (!SocketService.instance) {
+      const playerService = PlayerService.getInstance();
+      SocketService.instance = new SocketService(
+        'http://localhost:3333',
+        playerService.getPlayerId()
+      );
+    }
+    return SocketService.instance;
   }
 
   private connectToServer(serverUrl: string, playerId: string): Socket {

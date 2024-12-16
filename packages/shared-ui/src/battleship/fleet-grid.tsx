@@ -7,15 +7,12 @@ import { FleetGridProps } from './fleet-grid-props';
 import { Cell, FleetUtils } from '@nx-web-test/shared';
 
 const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
+  const playerService = PlayerService.getInstance();
+  const socketService = SocketService.getInstance();
+
   const [fleetService] = useState(() => new FleetService(gridSize));
   const [grid, setGrid] = useState(fleetService.getGrid());
   const [fleetCompleted, setFleetCompleted] = useState(false);
-  const [playerService, setPlayerService] = useState<PlayerService | null>(
-    null
-  );
-  const [socketService, setSocketService] = useState<SocketService | null>(
-    null
-  );
   const [hoveredCells, setHoveredCells] = useState<{ x: number; y: number }[]>(
     []
   );
@@ -24,22 +21,8 @@ const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
     y: number;
   } | null>(null);
 
-  useEffect(() => {
-    const playerServiceInstance = new PlayerService();
-    const socketServiceInstance = new SocketService(
-      'http://localhost:3333',
-      playerServiceInstance.getPlayerId()
-    );
-    setSocketService(socketServiceInstance);
-    setPlayerService(playerServiceInstance);
-
-    return () => {
-      socketServiceInstance.disconnect();
-    };
-  }, []);
-
   const handleShipRotation = useCallback(() => {
-    setGrid(fleetService.getGrid()); // Update grid state from fleetService
+    setGrid(fleetService.getGrid());
     if (currentHover) {
       const previewCells = fleetService.getShipPlacementPreview(
         currentHover.x,
@@ -70,7 +53,7 @@ const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
         currentHover.y
       );
       setHoveredCells(previewCells);
-      setGrid(fleetService.getGrid()); // Update grid on rotation
+      setGrid(fleetService.getGrid());
     }
   };
 
@@ -85,7 +68,7 @@ const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
   const handleMouseClick = (x: number, y: number) => {
     const { success } = fleetService.placeAndValidateShip(x, y);
     if (success) {
-      setGrid(fleetService.getGrid()); // Update grid after placing ship
+      setGrid(fleetService.getGrid());
       setHoveredCells([]);
 
       if (fleetService.isFleetCompleted()) {

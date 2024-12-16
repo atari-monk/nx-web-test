@@ -3,7 +3,6 @@ import { Cell, Grid } from '@nx-web-test/shared';
 import { BattleGridProps } from './battle-grid-props';
 
 const BattleGrid: React.FC<BattleGridProps> = ({ gridSize, onCellClick }) => {
-  // Initialize the grid state with empty cells
   const [grid, setGrid] = useState<Grid>(() => ({
     size: gridSize,
     cells: Array.from({ length: gridSize }, (_, rowIndex) =>
