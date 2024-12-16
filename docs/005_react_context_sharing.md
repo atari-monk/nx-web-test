@@ -1,0 +1,301 @@
+# SocketService Context Sharing (005_react_context_sharing.md)
+
+## To share the `SocketService` instance across multiple components in your app, the simplest and most efficient way is to use React Context. This approach avoids creating multiple instances of `SocketService` and ensures all components can access the same instance.
+
+### Steps to Implement:
+
+1. **Create a SocketContext**  
+   Create a context to hold the `SocketService` instance.
+
+   ```typescript
+   import React, { createContext, useContext, useMemo } from 'react';
+   import { SocketService } from './socket-service';
+
+   const SocketContext = createContext<SocketService | null>(null);
+
+   export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+     const socketService = useMemo(() => new SocketService('http://localhost:3333'), []);
+
+     return <SocketContext.Provider value={socketService}>{children}</SocketContext.Provider>;
+   };
+
+   export const useSocket = () => {
+     const context = useContext(SocketContext);
+     if (!context) {
+       throw new Error('useSocket must be used within a SocketProvider');
+     }
+     return context;
+   };
+   ```
+
+2. **Wrap Your App with the Provider**  
+   Use the `SocketProvider` at the root of your component tree (e.g., in `App` or a higher-level component).
+
+   ```typescript
+   import React from 'react';
+   import { SocketProvider } from './SocketContext'; // Adjust path as needed
+   import App from './App';
+
+   const Root: React.FC = () => {
+     return (
+       <SocketProvider>
+         <App />
+       </SocketProvider>
+     );
+   };
+
+   export default Root;
+   ```
+
+3. **Consume the SocketService in Components**  
+   Use the `useSocket` hook to access the `SocketService` instance in any component.
+
+   For example, in `FleetGrid`:
+
+   ```typescript
+   import React, { useState, useEffect } from 'react';
+   import { useSocket } from './SocketContext';
+
+   const FleetGrid: React.FC<GridProps> = ({ gridSize }) => {
+     const socketService = useSocket();
+     const [grid, setGrid] = useState(/* ... */);
+
+     useEffect(() => {
+       // Example usage
+       socketService.on('event', (data) => {
+         console.log(data);
+       });
+
+       return () => {
+         socketService.disconnect();
+       };
+     }, [socketService]);
+
+     // Component logic...
+   };
+   ```
+
+   Similarly, in other components:
+
+   ```typescript
+   const AnotherComponent = () => {
+     const socketService = useSocket();
+
+     useEffect(() => {
+       socketService.emit('some-event', { data: 'example' });
+     }, [socketService]);
+
+     return <div>Socket-enabled Component</div>;
+   };
+   ```
+
+### Why Use This Approach?
+
+- **Centralized Management:** A single `SocketService` instance is shared across the app.
+- **React-friendly:** Keeps your components functional and decoupled from direct instantiation logic.
+- **Performance Efficient:** `useMemo` ensures the `SocketService` is only initialized once.
+
+This pattern is scalable and works well even if you need the socket in more components later.
+
+## Yeah but this seems insane amount of boilerplate, i thought we will just initialize instance in app and pass it to components
+
+You're absolutely right that passing the instance directly can be simpler and avoids extra boilerplate, especially for smaller apps. Here's how you can do it:
+
+### Simplified Approach: Initialize in `App` and Pass as Prop
+
+1. **Initialize the `SocketService` in the `App` Component**  
+   Create an instance of `SocketService` in your `App` component and pass it down as a prop to child components.
+
+   ```typescript
+   import React, { useMemo, useState } from 'react';
+   import { FleetGrid, BattleGrid, MessageDisplay } from '@nx-web-test/shared-ui';
+   import { SocketService } from './socket-service';
+
+   export function App() {
+     const [gamePhase, setGamePhase] = useState<'fleetPlacement' | 'battle'>('fleetPlacement');
+     const gridSize = 10;
+
+     // Initialize SocketService once
+     const socketService = useMemo(() => new SocketService('http://localhost:3333'), []);
+
+     const handleFleetCompletion = () => {
+       setGamePhase('battle');
+     };
+
+     return (
+       <div>
+         {gamePhase === 'fleetPlacement' ? (
+           <FleetGrid
+             gridSize={gridSize}
+             onFleetComplete={handleFleetCompletion}
+             socketService={socketService} // Pass down as a prop
+           />
+         ) : (
+           <BattleGrid gridSize={gridSize} socketService={socketService} />
+         )}
+         <MessageDisplay />
+       </div>
+     );
+   }
+
+   export default App;
+   ```
+
+2. **Update `FleetGrid` and Other Components to Accept `socketService` as Prop**  
+   Modify `FleetGrid` and other components to use the passed `socketService` instance.
+
+   ```typescript
+   import React, { useState, useEffect } from 'react';
+   import { SocketService } from './socket-service';
+
+   interface FleetGridProps {
+     gridSize: number;
+     onFleetComplete: () => void;
+     socketService: SocketService;
+   }
+
+   const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete, socketService }) => {
+     const [grid, setGrid] = useState(/* ... */);
+
+     useEffect(() => {
+       // Example usage of socketService
+       socketService.on('some-event', (data) => {
+         console.log('Received event:', data);
+       });
+
+       return () => {
+         socketService.disconnect();
+       };
+     }, [socketService]);
+
+     // Component logic...
+   };
+
+   export default FleetGrid;
+   ```
+
+3. **Pass `socketService` Wherever Needed**  
+   Similarly, for `BattleGrid` or other components, just add `socketService` to the props.
+
+---
+
+### Pros of This Approach:
+
+- **Minimal Boilerplate:** No context or provider setup.
+- **Simple and Explicit:** Child components clearly declare the dependency on `socketService`.
+
+### Cons:
+
+- **Prop Drilling:** If `socketService` needs to go deep into the component hierarchy, this approach can get cumbersome.
+- **Less Flexible:** Harder to replace or mock `socketService` globally.
+
+---
+
+### When to Choose This:
+
+- **Small Apps or Prototypes:** Perfect for simpler apps with a few components.
+- **Limited Depth:** Use when `socketService` is needed only by a few direct child components.
+
+If your app grows and this starts to feel messy, you can always refactor to use `Context` later!
+
+## The simplest and most efficient way is to use React Context. Are u sure this is most up to date method and industry standard ?
+
+Yes, using **React Context** is still an **up-to-date**, **widely used**, and **industry-standard** approach for sharing a single instance of a service (like `SocketService`) across components in modern React applications. However, there are some nuances and alternatives depending on the app's scale and requirements. Let me clarify why it's commonly used and compare it with other methods.
+
+---
+
+### Why React Context is Standard
+
+1. **Single Source of Truth**: Context ensures that the `SocketService` instance is created once and shared across the app without prop drilling.
+2. **Scalability**: It avoids tightly coupling parent components to the needs of deeply nested children.
+3. **Clean API**: Components can use the `useSocket` hook to access the service without needing to be passed a prop explicitly.
+4. **Compatibility with React Features**: Works seamlessly with hooks, memoization, and server-side rendering (when used carefully).
+5. **Minimal Boilerplate**: Once the `Context` and `Provider` are set up, reusing or accessing the service is simple and intuitive.
+
+---
+
+### Industry Trends and Alternatives
+
+While React Context is a common choice, other solutions are emerging or are better suited for specific scenarios:
+
+1. **Using State Management Libraries (Redux, Zustand, Jotai):**
+
+   - If your app already uses a state management library, you can store the `SocketService` instance there.
+   - **Example (Zustand)**:
+
+     ```typescript
+     import create from 'zustand';
+
+     const useStore = create((set) => ({
+       socketService: new SocketService('http://localhost:3333'),
+     }));
+
+     const Component = () => {
+       const socketService = useStore((state) => state.socketService);
+       socketService.emit('test', {});
+     };
+     ```
+
+2. **Direct Prop Passing:**
+
+   - As discussed earlier, directly passing `SocketService` as a prop is simpler for small apps. However, this becomes cumbersome with deep hierarchies.
+   - Best for lightweight, single-purpose apps.
+
+3. **React Query or SWR (for Data-Fetching Scenarios):**
+
+   - If you’re mainly using `SocketService` to fetch real-time data, libraries like **React Query** or **SWR** are industry standards for handling remote data and real-time subscriptions efficiently.
+   - **Example (React Query):**
+
+     ```typescript
+     import { useQueryClient } from '@tanstack/react-query';
+
+     const queryClient = useQueryClient();
+     queryClient.setQueryData('socketService', new SocketService('http://localhost:3333'));
+     ```
+
+4. **Custom Hooks Without Context:**
+
+   - You can create a custom hook to manage the `SocketService` lifecycle and use it wherever needed:
+
+     ```typescript
+     let socketService: SocketService | null = null;
+
+     const useSocketService = () => {
+       if (!socketService) {
+         socketService = new SocketService('http://localhost:3333');
+       }
+       return socketService;
+     };
+
+     const Component = () => {
+       const socket = useSocketService();
+       socket.emit('event', {});
+     };
+     ```
+
+   - Simpler than Context for small projects but lacks React's lifecycle integration.
+
+---
+
+### Context in the Industry
+
+React Context is heavily used in real-world apps by companies and frameworks like:
+
+- **Next.js**: It’s common to use Context for global state or services like WebSocket or Authentication.
+- **Create React App** and similar boilerplates: They promote Context for global services.
+- **Examples in Production**:
+  - Sharing authentication tokens across components.
+  - Providing real-time features (e.g., chat apps) using WebSocket clients like your `SocketService`.
+
+---
+
+### When Context Is Not Ideal
+
+- **Frequent Updates:** If `SocketService` triggers frequent updates (e.g., new events), Context might re-render components unnecessarily. In such cases, libraries like **Zustand** are better.
+- **Large Teams/Apps:** For complex state-sharing needs, Redux or a dedicated state library might offer better patterns for maintainability.
+
+---
+
+### Final Verdict
+
+Yes, **React Context is a current best practice** and industry-standard for apps where the need for global shared state or services is moderate. However, for highly dynamic apps or larger teams, tools like Zustand, Redux, or React Query may provide more flexibility and scalability. If your app grows, you can always migrate to a more advanced pattern while still using Context as a foundation.
