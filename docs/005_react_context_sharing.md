@@ -6,6 +6,8 @@
 2. [Alternative](#alternative)
 3. [Why Context](#why-context)
 4. [Proposed solution](#proposed-solution)
+5. [Failed solution](#failed-solution)
+6. [Revised solution](#revised-solution)
 
 ## **Context**
 
@@ -478,3 +480,158 @@ To make both `PlayerService` and `SocketService` shared, app-level services that
 1. **Centralized Dependency Management**: Both `PlayerService` and `SocketService` are managed via React Context, ensuring they are shared across the app and only instantiated once.
 2. **Proper Dependency Injection**: `SocketService` depends on `PlayerService`, and this order is respected via nested providers.
 3. **Scalability**: Adding additional shared services or dependencies is straightforward using this pattern.
+
+## **Failed solution**
+
+[Table of Contents](#table-of-contents)
+
+Solution above failed. React was not holding service instance after commponnent was switched to other one.
+
+## **Revised solution**
+
+[Table of Contents](#table-of-contents)
+
+To move the services out of React while maintaining centralized, shared instances, we can employ singletons or modules to manage the `SocketService` and `PlayerService`. This approach keeps React components clean and decoupled from the service instantiation logic. Here's how:
+
+---
+
+### Solution: Singleton-Based Shared Services
+
+#### 1. **Singleton for `PlayerService` and `SocketService`**
+
+Create `PlayerService` and `SocketService` as singletons, ensuring a single shared instance for the entire app:
+
+**PlayerService Singleton:**
+
+```typescript
+// player-service.ts
+export class PlayerService {
+  private static instance: PlayerService;
+  private playerId: string;
+
+  private constructor() {
+    this.playerId = this.generatePlayerId();
+  }
+
+  public static getInstance(): PlayerService {
+    if (!PlayerService.instance) {
+      PlayerService.instance = new PlayerService();
+    }
+    return PlayerService.instance;
+  }
+
+  private generatePlayerId(): string {
+    return `player-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  public getPlayerId(): string {
+    return this.playerId;
+  }
+}
+```
+
+**SocketService Singleton:**
+
+```typescript
+// socket-service.ts
+import { PlayerService } from './player-service';
+
+export class SocketService {
+  private static instance: SocketService;
+  private socket: any;
+
+  private constructor(private url: string, private playerId: string) {
+    this.socket = this.initializeSocket();
+  }
+
+  public static getInstance(): SocketService {
+    if (!SocketService.instance) {
+      const playerService = PlayerService.getInstance();
+      SocketService.instance = new SocketService('http://localhost:3333', playerService.getPlayerId());
+    }
+    return SocketService.instance;
+  }
+
+  private initializeSocket() {
+    // Your socket initialization logic, e.g., socket.io or WebSocket
+    console.log(`Initializing socket for player ${this.playerId}`);
+    return {}; // Replace with actual socket instance
+  }
+
+  public emit(event: string, data: any) {
+    console.log(`Emitting event: ${event}`, data);
+    // Emit event via socket
+  }
+
+  public on(event: string, callback: (data: any) => void) {
+    console.log(`Listening to event: ${event}`);
+    // Listen for events via socket
+  }
+
+  public disconnect() {
+    console.log(`Disconnecting socket for player ${this.playerId}`);
+    // Disconnect logic
+  }
+}
+```
+
+---
+
+#### 2. **Consume the Services in React Components**
+
+**FleetGrid Component:**
+
+```typescript
+import React, { useState, useEffect } from 'react';
+import { PlayerService } from './player-service';
+import { SocketService } from './socket-service';
+
+const FleetGrid: React.FC<{ gridSize: number; onFleetComplete: () => void }> = ({ gridSize, onFleetComplete }) => {
+  const [grid, setGrid] = useState([]);
+  const playerService = PlayerService.getInstance();
+  const socketService = SocketService.getInstance();
+
+  useEffect(() => {
+    socketService.on('game-update', (data) => {
+      console.log('Game update received:', data);
+    });
+
+    return () => {
+      socketService.disconnect();
+    };
+  }, [socketService]);
+
+  const handleFleetPlacement = () => {
+    const playerId = playerService.getPlayerId();
+    console.log('Player ID:', playerId);
+    socketService.emit('fleet-placed', { playerId, grid });
+    onFleetComplete();
+  };
+
+  return (
+    <div>
+      {/* FleetGrid UI */}
+      <button onClick={handleFleetPlacement}>Complete Fleet Placement</button>
+    </div>
+  );
+};
+
+export default FleetGrid;
+```
+
+---
+
+### Advantages of Singleton Services
+
+1. **Global Accessibility**: `PlayerService` and `SocketService` are shared and accessible anywhere without React-specific logic.
+2. **Decoupled from React**: No Context, Providers, or Prop Drilling.
+3. **Easy Initialization**: Services initialize only once and can depend on each other.
+
+---
+
+### Considerations
+
+- **Testing**: Mocking singletons may require additional setup.
+- **Global State Changes**: If `SocketService` or `PlayerService` updates state, consider a state management library like Zustand for reactivity.
+
+This approach simplifies the architecture, removes React-specific boilerplate, and keeps services independent. Let me know if you'd like further refinements!
