@@ -1,6 +1,6 @@
 # Game socket events
 
-In socket-service.ts handle events related to game status
+## In socket-service.ts handle events related to game status
 
 ```typescript
 import { sendMessage } from './sender';
@@ -25,3 +25,5 @@ socket.on('turnChange', (nextPlayerId) => {
   sendMessage(`Turn change: ${nextPlayerId === playerId ? 'Your turn' : 'Wait for your turn'}`);
 });
 ```
+
+## This worked fine. It is working fine for server client events to prepare them in dry run notes before coding.

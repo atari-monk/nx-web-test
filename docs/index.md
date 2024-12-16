@@ -5,3 +5,4 @@
 - [003_chat.md](003_chat.md)
 - [004_player_id.md](004_player_id.md)
 - [005_react_context_sharing.md](005_react_context_sharing.md)
+- [006_socket_events.md](006_socket_events.md)

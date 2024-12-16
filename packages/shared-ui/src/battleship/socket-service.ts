@@ -1,6 +1,7 @@
 import { Grid, ShipPlacement } from '@nx-web-test/shared';
 import { io, Socket } from 'socket.io-client';
 import { PlayerService } from './player-service';
+import { sendMessage } from './sender';
 
 export class SocketService {
   private static instance: SocketService;
@@ -31,23 +32,32 @@ export class SocketService {
       socket.emit('joinGame', { playerId });
     });
 
-    // Setup event listeners for various events
-    const events = [
-      'joined',
-      'gameReady',
-      'fleetPlaced',
-      'gameStart',
-      'attackResult',
-      'attacked',
-      'turnChange',
-      'gameOver',
-      'error',
-    ];
+    socket.on('gameReady', (msg) => {
+      console.debug('Game ready:', msg);
+      sendMessage(`Game ready: ${msg}`);
+    });
 
-    events.forEach((event) => {
-      socket.on(event, (data) => {
-        console.debug(`Event received: ${event}`, data);
-      });
+    socket.on('fleetPlaced', (playerId) => {
+      console.debug('Fleet placed confirmation for playerId:', playerId);
+      sendMessage(`Fleet placed: ${playerId}`);
+    });
+
+    socket.on('gameStart', (data) => {
+      console.debug('Game start:', data);
+      sendMessage(
+        `Game start: ${data.message}, ${
+          data.firstTurn === playerId ? 'Your turn' : 'Wait for your turn'
+        }`
+      );
+    });
+
+    socket.on('turnChange', (nextPlayerId) => {
+      console.debug('Turn change:', nextPlayerId);
+      sendMessage(
+        `Turn change: ${
+          nextPlayerId === playerId ? 'Your turn' : 'Wait for your turn'
+        }`
+      );
     });
 
     return socket;
