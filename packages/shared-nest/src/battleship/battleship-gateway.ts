@@ -127,8 +127,8 @@ export class BattleshipGateway {
 
       FleetUtils.printGridWithFleet(player.grid, fleet);
 
-      client.emit('fleetPlaced', 'Fleet placement complete!');
-      this.logger.debug(`Fleet placed for player: ${client.id}`);
+      client.emit('fleetPlaced', playerId);
+      this.logger.debug(`Fleet placed for player: ${playerId}`);
 
       this.checkGameReady();
     } else {
