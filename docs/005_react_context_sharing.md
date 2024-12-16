@@ -8,6 +8,7 @@
 4. [Proposed solution](#proposed-solution)
 5. [Failed solution](#failed-solution)
 6. [Revised solution](#revised-solution)
+7. [Working solution](#working-solution)
 
 ## **Context**
 
@@ -635,3 +636,10 @@ export default FleetGrid;
 - **Global State Changes**: If `SocketService` or `PlayerService` updates state, consider a state management library like Zustand for reactivity.
 
 This approach simplifies the architecture, removes React-specific boilerplate, and keeps services independent. Let me know if you'd like further refinements!
+
+## **Working solution**
+
+Revised solution with singletons worked right away.  
+That is my problem with libraries.  
+In some matters they do magic.  
+In some matters they do something you dont want and dont know why.
