@@ -75,7 +75,7 @@ export class SocketService {
     this.socket?.emit('placeFleet', data);
   }
 
-  attack({ x, y }: { x: number; y: number }) {
-    this.socket?.emit('attack', { x, y });
+  attack(playerId: string, { x, y }: { x: number; y: number }) {
+    this.socket?.emit('attack', { playerId, coords: { x, y } });
   }
 }

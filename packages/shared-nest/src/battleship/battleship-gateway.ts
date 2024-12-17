@@ -171,9 +171,16 @@ export class BattleshipGateway {
   }
 
   @SubscribeMessage('attack')
-  handleAttack(client: Socket, { x, y }: { x: number; y: number }): void {
+  handleAttack(
+    client: Socket,
+    data: { playerId: string; coords: { x: number; y: number } }
+  ): void {
+    const {
+      playerId,
+      coords: { x, y },
+    } = data;
     this.logger.debug(
-      `Attack received from: ${client.id} at coordinates (${x}, ${y})`
+      `Attack received from: ${playerId} at coordinates (${x}, ${y})`
     );
     const currentPlayer = this.players[this.currentTurnIndex];
     const opponent = this.players.find((p) => p.id !== currentPlayer.id);
@@ -184,9 +191,9 @@ export class BattleshipGateway {
       return;
     }
 
-    if (client.id !== currentPlayer.id) {
+    if (playerId !== currentPlayer.id) {
       client.emit('error', 'It is not your turn!');
-      this.logger.debug(`Invalid turn attempt by: ${client.id}`);
+      this.logger.debug(`Invalid turn attempt by: ${playerId}`);
       return;
     }
 
@@ -194,14 +201,14 @@ export class BattleshipGateway {
     if (!targetCell) {
       client.emit('error', 'Invalid target.');
       this.logger.debug(
-        `Invalid target coordinates: (${x}, ${y}) by: ${client.id}`
+        `Invalid target coordinates: (${x}, ${y}) by: ${playerId}`
       );
       return;
     }
 
     if (targetCell.hit) {
       client.emit('error', 'Cell already targeted.');
-      this.logger.debug(`Cell already targeted: (${x}, ${y}) by: ${client.id}`);
+      this.logger.debug(`Cell already targeted: (${x}, ${y}) by: ${playerId}`);
       return;
     }
 
@@ -209,7 +216,7 @@ export class BattleshipGateway {
     if (targetCell.occupied) {
       client.emit('attackResult', { x, y, result: 'hit' });
       this.server.to(opponent.id).emit('attacked', { x, y, result: 'hit' });
-      this.logger.debug(`Attack result: hit at (${x}, ${y}) by: ${client.id}`);
+      this.logger.debug(`Attack result: hit at (${x}, ${y}) by: ${playerId}`);
 
       if (this.checkAllShipsSunk(opponent)) {
         this.server.emit('gameOver', { winner: currentPlayer.id });
@@ -219,7 +226,7 @@ export class BattleshipGateway {
     } else {
       client.emit('attackResult', { x, y, result: 'miss' });
       this.server.to(opponent.id).emit('attacked', { x, y, result: 'miss' });
-      this.logger.debug(`Attack result: miss at (${x}, ${y}) by: ${client.id}`);
+      this.logger.debug(`Attack result: miss at (${x}, ${y}) by: ${playerId}`);
     }
 
     this.currentTurnIndex = (this.currentTurnIndex + 1) % 2;
