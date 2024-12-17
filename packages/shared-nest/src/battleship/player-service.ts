@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PlayerRepository } from './player-repository';
+import { FleetUtils, Grid, ShipPlacement } from '@nx-web-test/shared';
 
 @Injectable()
 export class PlayerService {
@@ -68,5 +69,46 @@ export class PlayerService {
           this.logger.debug(`Player ${player.id} removed after grace period`);
       }
     }, 30000);
+  }
+
+  placeFleet(
+    server: Server,
+    client: Socket,
+    data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }
+  ) {
+    const { playerId, grid, fleet } = data;
+    const player = this.playerRepository.getPlayerById(playerId);
+    if (!(player && player.state === 'placement')) {
+      const msg = `Fleet placement error for player: ${playerId}`;
+      client.emit('error', msg);
+      this.logger.debug(msg);
+      return;
+    }
+    player.grid = grid;
+    player.ships = fleet;
+    player.state = 'ready';
+    FleetUtils.printGridWithFleet(player.grid, fleet);
+    client.emit('fleetPlaced', playerId);
+    this.logger.debug(`Fleet placed for player: ${playerId}`);
+    this.checkGameReady(server);
+  }
+
+  private checkGameReady(server: Server) {
+    this.logger.debug('Checking if the game is ready to start.');
+    if (!this.playerRepository.isFull()) {
+      this.logger.warn('Not enough players to start the game.');
+      return;
+    }
+    if (!this.playerRepository.isReady()) {
+      this.logger.log('Not all players are ready yet.');
+      return;
+    }
+    this.logger.debug('All players are ready. Starting the game.');
+    this.playerRepository.setInTurnState();
+    this.playerRepository.setTurnIndex();
+    server.emit('gameStart', {
+      message: 'All players have placed their fleets. Game starts!',
+      firstTurn: this.playerRepository.getPlayerIdInTurn(),
+    });
   }
 }

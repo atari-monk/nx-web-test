@@ -5,6 +5,7 @@ import { Player, Cell } from '@nx-web-test/shared';
 export class PlayerRepository {
   private MAX_PLAYERS = 2;
   private players: Player[] = [];
+  private currentTurnIndex = 0;
 
   getPlayerById(playerId: string): Player | false {
     const player = this.players.find((p) => p.id === playerId);
@@ -36,6 +37,22 @@ export class PlayerRepository {
 
   isFull() {
     return this.players.length === this.MAX_PLAYERS;
+  }
+
+  isReady() {
+    return this.players.every((p) => p.state === 'ready');
+  }
+
+  setInTurnState() {
+    this.players.forEach((p) => (p.state = 'in-turn'));
+  }
+
+  setTurnIndex() {
+    this.currentTurnIndex = Math.floor(Math.random() * this.players.length);
+  }
+
+  getPlayerIdInTurn() {
+    return this.players[this.currentTurnIndex].id;
   }
 
   addNewPlayer(playerId: string, socketId: string) {
