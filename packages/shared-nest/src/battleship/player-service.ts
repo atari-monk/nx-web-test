@@ -108,7 +108,67 @@ export class PlayerService {
     this.playerRepository.setTurnIndex();
     server.emit('gameStart', {
       message: 'All players have placed their fleets. Game starts!',
-      firstTurn: this.playerRepository.getPlayerIdInTurn(),
+      firstTurn: this.playerRepository.getPlayerInTurn(),
     });
+  }
+
+  attack(
+    server: Server,
+    client: Socket,
+    data: { playerId: string; coords: { x: number; y: number } }
+  ) {
+    const {
+      playerId,
+      coords: { x, y },
+    } = data;
+    this.logger.debug(
+      `Attack received from player ${playerId} at coordinates (${x}, ${y})`
+    );
+    const currentPlayer = this.playerRepository.getPlayerInTurn();
+    const opponent = this.playerRepository.getOpponentPlayer(currentPlayer.id);
+    if (!opponent) {
+      const msg = 'Opponent not found.';
+      client.emit('error', msg);
+      this.logger.debug(msg);
+      return;
+    }
+    if (playerId !== currentPlayer.id) {
+      client.emit('error', 'It is not your turn!');
+      this.logger.debug(`Invalid turn attempt by: ${playerId}`);
+      return;
+    }
+    const targetCell = opponent.grid.cells[x]?.[y];
+    if (!targetCell) {
+      client.emit('error', 'Invalid target.');
+      this.logger.debug(
+        `Invalid target coordinates: (${x}, ${y}) by: ${playerId}`
+      );
+      return;
+    }
+    if (targetCell.hit) {
+      client.emit('error', 'Cell already targeted.');
+      this.logger.debug(`Cell already targeted: (${x}, ${y}) by: ${playerId}`);
+      return;
+    }
+    targetCell.hit = true;
+    if (targetCell.occupied) {
+      client.emit('attackResult', { x, y, result: 'hit' });
+      server.to(opponent.id).emit('attacked', { x, y, result: 'hit' });
+      this.logger.debug(`Attack result: hit at (${x}, ${y}) by: ${playerId}`);
+
+      if (this.playerRepository.checkAllShipsSunk(opponent)) {
+        server.emit('gameOver', { winner: currentPlayer.id });
+        this.logger.debug(`Game over. Winner: ${currentPlayer.id}`);
+        return;
+      }
+    } else {
+      client.emit('attackResult', { x, y, result: 'miss' });
+      server.to(opponent.id).emit('attacked', { x, y, result: 'miss' });
+      this.logger.debug(`Attack result: miss at (${x}, ${y}) by: ${playerId}`);
+    }
+    this.playerRepository.setNextTurnIndex();
+    const nextPlayerId = this.playerRepository.getPlayerInTurn().id;
+    server.emit('turnChange', nextPlayerId);
+    this.logger.debug(`Turn changed. Next player: ${nextPlayerId}`);
   }
 }

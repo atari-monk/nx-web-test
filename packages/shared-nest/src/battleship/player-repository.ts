@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { Player, Cell } from '@nx-web-test/shared';
+import { Player, Cell, Grid, ShipPlacement } from '@nx-web-test/shared';
 
 @Injectable()
 export class PlayerRepository {
   private MAX_PLAYERS = 2;
   private players: Player[] = [];
   private currentTurnIndex = 0;
+
+  getPlayerInTurn() {
+    return this.players[this.currentTurnIndex];
+  }
+
+  getOpponentPlayer(currentPlayerId: string) {
+    return this.players.find((p) => p.id !== currentPlayerId);
+  }
 
   getPlayerById(playerId: string): Player | false {
     const player = this.players.find((p) => p.id === playerId);
@@ -51,8 +59,8 @@ export class PlayerRepository {
     this.currentTurnIndex = Math.floor(Math.random() * this.players.length);
   }
 
-  getPlayerIdInTurn() {
-    return this.players[this.currentTurnIndex].id;
+  setNextTurnIndex() {
+    this.currentTurnIndex = (this.currentTurnIndex + 1) % 2;
   }
 
   addNewPlayer(playerId: string, socketId: string) {
@@ -76,5 +84,26 @@ export class PlayerRepository {
       }))
     );
     return grid;
+  }
+
+  checkAllShipsSunk(player: Player): boolean {
+    const allSunk = player.ships.every((ship) =>
+      this.isShipSunk(player.grid, ship)
+    );
+    return allSunk;
+  }
+
+  private isShipSunk(grid: Grid, ship: ShipPlacement): boolean {
+    const { x, y, size, orientation } = ship;
+
+    for (let i = 0; i < size; i++) {
+      const currentX = orientation === 'horizontal' ? x : x + i;
+      const currentY = orientation === 'horizontal' ? y + i : y;
+
+      if (!grid.cells[currentX]?.[currentY]?.hit) {
+        return false;
+      }
+    }
+    return true;
   }
 }
