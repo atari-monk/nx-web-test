@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Cell, Grid } from '@nx-web-test/shared';
 import { BattleGridProps } from './battle-grid-props';
+import { SocketService } from './socket-service';
 
 const BattleGrid: React.FC<BattleGridProps> = ({ gridSize, onCellClick }) => {
+  const socketService = SocketService.getInstance();
+
   const [grid, setGrid] = useState<Grid>(() => ({
     size: gridSize,
     cells: Array.from({ length: gridSize }, (_, rowIndex) =>
@@ -19,6 +22,7 @@ const BattleGrid: React.FC<BattleGridProps> = ({ gridSize, onCellClick }) => {
       const updatedCells = prevGrid.cells.map((row, rowIndex) =>
         row.map((cell, colIndex) => {
           if (rowIndex === x && colIndex === y) {
+            socketService.attack({ x, y });
             return { ...cell, hit: true };
           }
           return cell;

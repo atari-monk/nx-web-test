@@ -74,4 +74,8 @@ export class SocketService {
   placeFleet(data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }) {
     this.socket?.emit('placeFleet', data);
   }
+
+  attack({ x, y }: { x: number; y: number }) {
+    this.socket?.emit('attack', { x, y });
+  }
 }
