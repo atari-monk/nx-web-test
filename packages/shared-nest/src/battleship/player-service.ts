@@ -7,12 +7,29 @@ export class PlayerRepository {
   private MAX_PLAYERS = 2;
   private players: Player[] = [];
 
-  getPlayer(playerId: string): Player | undefined {
-    return this.players.find((p) => p.id === playerId);
+  getPlayerById(playerId: string): Player | false {
+    const player = this.players.find((p) => p.id === playerId);
+    if (!player) return false;
+    return player;
+  }
+
+  getPlayerBySocketId(socketId: string): Player | false {
+    const playerIndex = this.players.findIndex((p) => p.socketId === socketId);
+    if (playerIndex === -1) return false;
+    return this.players[playerIndex];
+  }
+
+  removePlayerBySocketId(socketId: string): boolean {
+    const index = this.players.findIndex((p) => p.socketId === socketId);
+    if (index !== -1) {
+      this.players.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   updateSocketId(playerId: string, socketId: string) {
-    const existingPlayer = this.getPlayer(playerId);
+    const existingPlayer = this.getPlayerById(playerId);
     if (!existingPlayer) return false;
     existingPlayer.socketId = socketId;
     return existingPlayer;
@@ -98,5 +115,19 @@ export class PlayerService {
     const msg = 'Game is already full';
     client.emit('error', { message: msg });
     this.logger.debug(msg);
+  }
+
+  removePlayer(socketId: string) {
+    const player = this.playerRepository.getPlayerBySocketId(socketId);
+    if (!player) return;
+    this.logger.debug(`Player ${player.id} disconnected`);
+    setTimeout(() => {
+      const playerStillDisconnected =
+        this.playerRepository.getPlayerBySocketId(socketId);
+      if (playerStillDisconnected) {
+        if (this.playerRepository.removePlayerBySocketId(socketId))
+          this.logger.debug(`Player ${player.id} removed after grace period`);
+      }
+    }, 30000);
   }
 }
