@@ -1,7 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PlayerRepository } from './player-repository';
-import { FleetUtils, Grid, ShipPlacement } from '@nx-web-test/shared';
+import {
+  EmitEvent,
+  FleetUtils,
+  Grid,
+  ShipPlacement,
+  StatusCode,
+} from '@nx-web-test/shared';
 
 @Injectable()
 export class PlayerService {
@@ -23,10 +29,15 @@ export class PlayerService {
     );
     if (!existingPlayer) return false;
     const msg = 'Reconnected to the game';
-    client.emit('reconnectPlayer', {
+    client.emit(EmitEvent.ReconnectPlayer, {
+      status: StatusCode.OK,
+      event: EmitEvent.ReconnectPlayer,
       message: msg,
-      grid: existingPlayer.grid,
-      ships: existingPlayer.ships,
+      data: {
+        grid: existingPlayer.grid,
+        ships: existingPlayer.ships,
+      },
+      timestamp: Date.now(),
     });
     this.logger.debug(msg);
     return true;
