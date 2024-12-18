@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PlayerRepository } from './player-repository';
 import {
-  EmitEvent,
+  ClientEvent,
   FleetUtils,
   Grid,
   ShipPlacement,
@@ -33,7 +33,7 @@ export class PlayerService {
     emitEvent(
       this.logger,
       client,
-      EmitEvent.ReconnectPlayer,
+      ClientEvent.ReconnectPlayer,
       { playerId, socketId: client.id },
       StatusCode.OK,
       'Reconnected to the game',
@@ -54,7 +54,7 @@ export class PlayerService {
     emitEvent(
       this.logger,
       client,
-      EmitEvent.Joined,
+      ClientEvent.Joined,
       { playerId, socketId: client.id },
       StatusCode.OK,
       'Joined the game'
@@ -69,7 +69,7 @@ export class PlayerService {
     emitEvent(
       this.logger,
       server,
-      EmitEvent.GameReady,
+      ClientEvent.GameReady,
       { playerId: '', socketId: '' },
       StatusCode.OK,
       'Both players have joined. Place your fleets!'
@@ -82,7 +82,7 @@ export class PlayerService {
     emitEvent(
       this.logger,
       client,
-      EmitEvent.Error,
+      ClientEvent.Error,
       { playerId: '', socketId: client.id },
       StatusCode.Forbidden,
       'Game is already full'
@@ -117,7 +117,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         client,
-        EmitEvent.Error,
+        ClientEvent.Error,
         { playerId, socketId: client.id },
         StatusCode.BadRequest,
         `Fleet placement error for player: ${playerId}`
@@ -133,7 +133,7 @@ export class PlayerService {
     emitEvent(
       this.logger,
       client,
-      EmitEvent.GameReady,
+      ClientEvent.GameReady,
       { playerId, socketId: client.id },
       StatusCode.OK,
       `Fleet placed for player: ${playerId}`
@@ -163,7 +163,7 @@ export class PlayerService {
     emitEvent(
       this.logger,
       server,
-      EmitEvent.GameStart,
+      ClientEvent.GameStart,
       { playerId: '', socketId: '' },
       StatusCode.OK,
       'All players have placed their fleets. Game starts!',
@@ -191,7 +191,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         client,
-        EmitEvent.Error,
+        ClientEvent.Error,
         { playerId, socketId: client.id },
         StatusCode.BadRequest,
         'Opponent not found.'
@@ -203,7 +203,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         client,
-        EmitEvent.Error,
+        ClientEvent.Error,
         { playerId, socketId: client.id },
         StatusCode.BadRequest,
         `Invalid turn attempt by: ${playerId}`
@@ -216,7 +216,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         client,
-        EmitEvent.Error,
+        ClientEvent.Error,
         { playerId, socketId: client.id },
         StatusCode.BadRequest,
         `Invalid target coordinates: (${x}, ${y}) by: ${playerId}`
@@ -228,7 +228,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         client,
-        EmitEvent.Error,
+        ClientEvent.Error,
         { playerId, socketId: client.id },
         StatusCode.BadRequest,
         `Cell already targeted: (${x}, ${y}) by: ${playerId}`
@@ -242,7 +242,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         client,
-        EmitEvent.AttackResult,
+        ClientEvent.AttackResult,
         { playerId, socketId: client.id },
         StatusCode.OK,
         `Attack result: hit at (${x}, ${y}) by: ${playerId}`,
@@ -252,7 +252,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         server,
-        EmitEvent.AttackResult,
+        ClientEvent.AttackResult,
         { playerId, socketId: client.id },
         StatusCode.OK,
         `Attack result: hit at (${x}, ${y}) by: ${playerId}`,
@@ -264,7 +264,7 @@ export class PlayerService {
         emitEvent(
           this.logger,
           server,
-          EmitEvent.GameOver,
+          ClientEvent.GameOver,
           { playerId: '', socketId: '' },
           StatusCode.OK,
           `Game over. Winner: ${currentPlayer.id}`,
@@ -276,7 +276,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         client,
-        EmitEvent.AttackResult,
+        ClientEvent.AttackResult,
         { playerId, socketId: client.id },
         StatusCode.OK,
         `Attack result: miss at (${x}, ${y}) by: ${playerId}`,
@@ -286,7 +286,7 @@ export class PlayerService {
       emitEvent(
         this.logger,
         server,
-        EmitEvent.AttackResult,
+        ClientEvent.AttackResult,
         { playerId, socketId: client.id },
         StatusCode.OK,
         `Attack result: miss at (${x}, ${y}) by: ${playerId}`,
@@ -301,7 +301,7 @@ export class PlayerService {
     emitEvent(
       this.logger,
       server,
-      EmitEvent.TurnChange,
+      ClientEvent.TurnChange,
       { playerId: '', socketId: '' },
       StatusCode.OK,
       `Turn changed. Next player: ${nextPlayerId}`,

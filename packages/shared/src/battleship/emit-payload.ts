@@ -1,13 +1,4 @@
-export enum EmitEvent {
-  ReconnectPlayer = 'reconnectPlayer',
-  Joined = 'joined',
-  GameReady = 'gameReady',
-  GameStart = 'gameStart',
-  TurnChange = 'turnChange',
-  AttackResult = 'attackResult',
-  GameOver = 'gameOver',
-  Error = 'error',
-}
+import { ClientEvent } from './client-event';
 
 export enum StatusCode {
   OK = 200,
@@ -23,7 +14,7 @@ export enum StatusCode {
 
 export interface EmitPayload<T = any> {
   status: StatusCode;
-  event: EmitEvent;
+  event: ClientEvent;
   message: string;
   data?: T;
   timestamp?: number;

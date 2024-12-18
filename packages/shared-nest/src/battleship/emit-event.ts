@@ -1,11 +1,11 @@
 import { Logger } from '@nestjs/common';
-import { EmitEvent, StatusCode, EmitPayload } from '@nx-web-test/shared';
+import { ClientEvent, StatusCode, EmitPayload } from '@nx-web-test/shared';
 import { Server, Socket } from 'socket.io';
 
 export function emitEvent(
   logger: Logger,
   target: Socket | Server,
-  event: EmitEvent,
+  event: ClientEvent,
   ids: { playerId: string; socketId: string },
   status: StatusCode,
   message: string,

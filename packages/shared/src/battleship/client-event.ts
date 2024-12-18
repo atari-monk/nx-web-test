@@ -1,19 +1,3 @@
-# Server Client Events
-
-## Server events
-
-```typescript
-export enum ServerEvent {
-  JoinGame = 'joinGame',
-  Disconnect = 'disconnect',
-  PlaceFleet = 'placeFleet',
-  Attack = 'attack',
-}
-```
-
-## Client events
-
-```typescript
 export enum ClientEvent {
   ReconnectPlayer = 'reconnectPlayer',
   Joined = 'joined',
@@ -24,4 +8,3 @@ export enum ClientEvent {
   GameOver = 'gameOver',
   Error = 'error',
 }
-```
