@@ -31,3 +31,12 @@ export enum ClientEvent {
 
 1. Client<-ClientEvent.Connect
 2. Client->ServerEvent.JoinGame
+3. Server<-ServerEvent.JoinGame
+4. [if player exist] Server->ClientEvent.ReconnectPlayer (todo: handle it on client)
+5. Client<-ClientEvent.ReconnectPlayer
+6. [if player new] Server->ClientEvent.Joined
+7. Client<-ClientEvent.Joined
+8. [if players full] Server->ClientEvent.GameReady
+9. Client<-ClientEvent.GameReady
+10. Server->ClientEvent.Error
+11. Client<-ClientEvent.Error

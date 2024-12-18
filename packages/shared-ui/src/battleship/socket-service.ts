@@ -1,5 +1,6 @@
 import {
   ClientEvent,
+  EmitPayload,
   Grid,
   ServerEvent,
   ShipPlacement,
@@ -43,11 +44,33 @@ export class SocketService {
         StatusCode.OK,
         'Client connecting to the server'
       );
+      console.debug('Sending Join Game');
     });
 
-    socket.on('gameReady', (msg) => {
-      console.debug('Game ready:', msg);
-      sendMessage(`Game ready: ${msg}`);
+    socket.on(ClientEvent.ReconnectPlayer, (payload: EmitPayload) => {
+      const {
+        ids: { playerId, socketId },
+      } = payload;
+      console.debug(`Player ${playerId} on socket ${socketId} Reconnect`);
+    });
+
+    socket.on(ClientEvent.Joined, (payload: EmitPayload) => {
+      const {
+        ids: { playerId, socketId },
+      } = payload;
+      console.debug(`Player ${playerId} on socket ${socketId} Joined`);
+    });
+
+    socket.on(ClientEvent.GameReady, (payload: EmitPayload) => {
+      const { message } = payload;
+      console.debug('Game ready:', message);
+      sendMessage(`Game ready: ${message}`);
+    });
+
+    socket.on(ClientEvent.Error, (payload: EmitPayload) => {
+      const { message } = payload;
+      console.debug('Error:', message);
+      sendMessage(`Error: ${message}`);
     });
 
     socket.on('fleetPlaced', (playerId) => {
