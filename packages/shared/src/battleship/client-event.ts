@@ -1,4 +1,5 @@
 export enum ClientEvent {
+  Connect = 'connect',
   ReconnectPlayer = 'reconnectPlayer',
   Joined = 'joined',
   GameReady = 'gameReady',

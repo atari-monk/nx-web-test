@@ -1,4 +1,5 @@
 import { ClientEvent } from './client-event';
+import { ServerEvent } from './server-event';
 
 export enum StatusCode {
   OK = 200,
@@ -14,7 +15,7 @@ export enum StatusCode {
 
 export interface EmitPayload<T = any> {
   status: StatusCode;
-  event: ClientEvent;
+  event: ClientEvent | ServerEvent;
   message: string;
   data?: T;
   timestamp?: number;

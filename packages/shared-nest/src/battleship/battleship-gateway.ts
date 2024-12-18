@@ -6,8 +6,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { PlayerService } from './player-service';
-import { Grid, ShipPlacement } from '@nx-web-test/shared';
-import { ServerEvent } from './server-event';
+import { Grid, ServerEvent, ShipPlacement } from '@nx-web-test/shared';
 
 @WebSocketGateway({
   cors: {

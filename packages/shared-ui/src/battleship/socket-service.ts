@@ -1,7 +1,14 @@
-import { Grid, ShipPlacement } from '@nx-web-test/shared';
+import {
+  ClientEvent,
+  Grid,
+  ServerEvent,
+  ShipPlacement,
+  StatusCode,
+} from '@nx-web-test/shared';
 import { io, Socket } from 'socket.io-client';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
+import { emitEvent } from './emit-event';
 
 export class SocketService {
   private static instance: SocketService;
@@ -27,9 +34,16 @@ export class SocketService {
       query: { playerId },
     });
 
-    socket.on('connect', () => {
-      console.debug('Connected to the server');
-      socket.emit('joinGame', { playerId });
+    socket.on(ClientEvent.Connect, () => {
+      emitEvent(
+        console,
+        socket,
+        ServerEvent.JoinGame,
+        { playerId, socketId: socket.id ?? '' },
+        StatusCode.OK,
+        'Client connected to the server',
+        { playerId }
+      );
     });
 
     socket.on('gameReady', (msg) => {

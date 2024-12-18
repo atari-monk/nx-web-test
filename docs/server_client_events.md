@@ -15,6 +15,7 @@ export enum ServerEvent {
 
 ```typescript
 export enum ClientEvent {
+  Connect = 'connect',
   ReconnectPlayer = 'reconnectPlayer',
   Joined = 'joined',
   GameReady = 'gameReady',
@@ -25,3 +26,5 @@ export enum ClientEvent {
   Error = 'error',
 }
 ```
+
+## Communication sequence
