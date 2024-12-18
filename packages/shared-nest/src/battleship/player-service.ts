@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PlayerRepository } from './player-repository';
 import {
+  emitEvent,
   EmitEvent,
   FleetUtils,
   Grid,
@@ -28,50 +29,72 @@ export class PlayerService {
       client.id
     );
     if (!existingPlayer) return false;
-    const msg = 'Reconnected to the game';
-    client.emit(EmitEvent.ReconnectPlayer, {
-      status: StatusCode.OK,
-      event: EmitEvent.ReconnectPlayer,
-      message: msg,
-      data: {
+
+    emitEvent(
+      this.logger,
+      client,
+      EmitEvent.ReconnectPlayer,
+      { playerId, socketId: client.id },
+      StatusCode.OK,
+      'Reconnected to the game',
+      {
         grid: existingPlayer.grid,
         ships: existingPlayer.ships,
-      },
-      timestamp: Date.now(),
-    });
-    this.logger.debug(msg);
+      }
+    );
+
     return true;
   }
 
   private addNewPlayer(client: Socket, playerId: string) {
     if (this.playerRepository.isFull()) return false;
+
     this.playerRepository.addNewPlayer(playerId, client.id);
-    const msg = 'Joined the game';
-    client.emit('joined', { message: msg });
-    this.logger.debug(msg);
+
+    emitEvent(
+      this.logger,
+      client,
+      EmitEvent.Joined,
+      { playerId, socketId: client.id },
+      StatusCode.OK,
+      'Joined the game'
+    );
+
     return true;
   }
 
   private gameReady(server: Server) {
     if (!this.playerRepository.isFull()) return false;
-    const msg = 'Both players have joined. Place your fleets!';
-    server.emit('gameReady', {
-      message: msg,
-    });
-    this.logger.debug(msg);
+
+    emitEvent(
+      this.logger,
+      server,
+      EmitEvent.GameReady,
+      { playerId: '', socketId: '' },
+      StatusCode.OK,
+      'Both players have joined. Place your fleets!'
+    );
+
     return true;
   }
 
   private gameFull(client: Socket) {
-    const msg = 'Game is already full';
-    client.emit('error', { message: msg });
-    this.logger.debug(msg);
+    emitEvent(
+      this.logger,
+      client,
+      EmitEvent.Error,
+      { playerId: '', socketId: client.id },
+      StatusCode.Forbidden,
+      'Game is already full'
+    );
   }
 
   removePlayer(socketId: string) {
     const player = this.playerRepository.getPlayerBySocketId(socketId);
     if (!player) return;
+
     this.logger.debug(`Player ${player.id} disconnected`);
+
     setTimeout(() => {
       const playerStillDisconnected =
         this.playerRepository.getPlayerBySocketId(socketId);
@@ -89,38 +112,63 @@ export class PlayerService {
   ) {
     const { playerId, grid, fleet } = data;
     const player = this.playerRepository.getPlayerById(playerId);
+
     if (!(player && player.state === 'placement')) {
-      const msg = `Fleet placement error for player: ${playerId}`;
-      client.emit('error', msg);
-      this.logger.debug(msg);
+      emitEvent(
+        this.logger,
+        client,
+        EmitEvent.Error,
+        { playerId, socketId: client.id },
+        StatusCode.BadRequest,
+        `Fleet placement error for player: ${playerId}`
+      );
       return;
     }
+
     player.grid = grid;
     player.ships = fleet;
     player.state = 'ready';
     FleetUtils.printGridWithFleet(player.grid, fleet);
-    client.emit('fleetPlaced', playerId);
-    this.logger.debug(`Fleet placed for player: ${playerId}`);
+
+    emitEvent(
+      this.logger,
+      client,
+      EmitEvent.GameReady,
+      { playerId, socketId: client.id },
+      StatusCode.OK,
+      `Fleet placed for player: ${playerId}`
+    );
+
     this.checkGameReady(server);
   }
 
   private checkGameReady(server: Server) {
     this.logger.debug('Checking if the game is ready to start.');
+
     if (!this.playerRepository.isFull()) {
       this.logger.warn('Not enough players to start the game.');
       return;
     }
+
     if (!this.playerRepository.isReady()) {
       this.logger.log('Not all players are ready yet.');
       return;
     }
+
     this.logger.debug('All players are ready. Starting the game.');
+
     this.playerRepository.setInTurnState();
     this.playerRepository.setTurnIndex();
-    server.emit('gameStart', {
-      message: 'All players have placed their fleets. Game starts!',
-      firstTurn: this.playerRepository.getPlayerInTurn(),
-    });
+
+    emitEvent(
+      this.logger,
+      server,
+      EmitEvent.GameStart,
+      { playerId: '', socketId: '' },
+      StatusCode.OK,
+      'All players have placed their fleets. Game starts!',
+      { firstTurn: this.playerRepository.getPlayerInTurn() }
+    );
   }
 
   attack(
@@ -135,51 +183,129 @@ export class PlayerService {
     this.logger.debug(
       `Attack received from player ${playerId} at coordinates (${x}, ${y})`
     );
+
     const currentPlayer = this.playerRepository.getPlayerInTurn();
     const opponent = this.playerRepository.getOpponentPlayer(currentPlayer.id);
+
     if (!opponent) {
-      const msg = 'Opponent not found.';
-      client.emit('error', msg);
-      this.logger.debug(msg);
+      emitEvent(
+        this.logger,
+        client,
+        EmitEvent.Error,
+        { playerId, socketId: client.id },
+        StatusCode.BadRequest,
+        'Opponent not found.'
+      );
       return;
     }
+
     if (playerId !== currentPlayer.id) {
-      client.emit('error', 'It is not your turn!');
-      this.logger.debug(`Invalid turn attempt by: ${playerId}`);
+      emitEvent(
+        this.logger,
+        client,
+        EmitEvent.Error,
+        { playerId, socketId: client.id },
+        StatusCode.BadRequest,
+        `Invalid turn attempt by: ${playerId}`
+      );
       return;
     }
+
     const targetCell = opponent.grid.cells[x]?.[y];
     if (!targetCell) {
-      client.emit('error', 'Invalid target.');
-      this.logger.debug(
+      emitEvent(
+        this.logger,
+        client,
+        EmitEvent.Error,
+        { playerId, socketId: client.id },
+        StatusCode.BadRequest,
         `Invalid target coordinates: (${x}, ${y}) by: ${playerId}`
       );
       return;
     }
+
     if (targetCell.hit) {
-      client.emit('error', 'Cell already targeted.');
-      this.logger.debug(`Cell already targeted: (${x}, ${y}) by: ${playerId}`);
+      emitEvent(
+        this.logger,
+        client,
+        EmitEvent.Error,
+        { playerId, socketId: client.id },
+        StatusCode.BadRequest,
+        `Cell already targeted: (${x}, ${y}) by: ${playerId}`
+      );
       return;
     }
+
     targetCell.hit = true;
+
     if (targetCell.occupied) {
-      client.emit('attackResult', { x, y, result: 'hit' });
-      server.to(opponent.id).emit('attacked', { x, y, result: 'hit' });
-      this.logger.debug(`Attack result: hit at (${x}, ${y}) by: ${playerId}`);
+      emitEvent(
+        this.logger,
+        client,
+        EmitEvent.AttackResult,
+        { playerId, socketId: client.id },
+        StatusCode.OK,
+        `Attack result: hit at (${x}, ${y}) by: ${playerId}`,
+        { x, y, result: 'hit' }
+      );
+
+      emitEvent(
+        this.logger,
+        server,
+        EmitEvent.AttackResult,
+        { playerId, socketId: client.id },
+        StatusCode.OK,
+        `Attack result: hit at (${x}, ${y}) by: ${playerId}`,
+        { x, y, result: 'hit' },
+        opponent.id
+      );
 
       if (this.playerRepository.checkAllShipsSunk(opponent)) {
-        server.emit('gameOver', { winner: currentPlayer.id });
-        this.logger.debug(`Game over. Winner: ${currentPlayer.id}`);
+        emitEvent(
+          this.logger,
+          server,
+          EmitEvent.GameOver,
+          { playerId: '', socketId: '' },
+          StatusCode.OK,
+          `Game over. Winner: ${currentPlayer.id}`,
+          { winner: currentPlayer.id }
+        );
         return;
       }
     } else {
-      client.emit('attackResult', { x, y, result: 'miss' });
-      server.to(opponent.id).emit('attacked', { x, y, result: 'miss' });
-      this.logger.debug(`Attack result: miss at (${x}, ${y}) by: ${playerId}`);
+      emitEvent(
+        this.logger,
+        client,
+        EmitEvent.AttackResult,
+        { playerId, socketId: client.id },
+        StatusCode.OK,
+        `Attack result: miss at (${x}, ${y}) by: ${playerId}`,
+        { x, y, result: 'miss' }
+      );
+
+      emitEvent(
+        this.logger,
+        server,
+        EmitEvent.AttackResult,
+        { playerId, socketId: client.id },
+        StatusCode.OK,
+        `Attack result: miss at (${x}, ${y}) by: ${playerId}`,
+        { x, y, result: 'miss' },
+        opponent.id
+      );
     }
+
     this.playerRepository.setNextTurnIndex();
     const nextPlayerId = this.playerRepository.getPlayerInTurn().id;
-    server.emit('turnChange', nextPlayerId);
-    this.logger.debug(`Turn changed. Next player: ${nextPlayerId}`);
+
+    emitEvent(
+      this.logger,
+      server,
+      EmitEvent.TurnChange,
+      { playerId: '', socketId: '' },
+      StatusCode.OK,
+      `Turn changed. Next player: ${nextPlayerId}`,
+      { nextPlayerId }
+    );
   }
 }
