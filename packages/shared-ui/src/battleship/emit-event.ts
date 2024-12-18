@@ -18,6 +18,7 @@ export function emitEvent(
   const payload: EmitPayload = {
     status,
     event,
+    ids,
     message,
     data,
     timestamp: Date.now(),

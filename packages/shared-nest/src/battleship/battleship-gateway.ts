@@ -6,7 +6,12 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { PlayerService } from './player-service';
-import { Grid, ServerEvent, ShipPlacement } from '@nx-web-test/shared';
+import {
+  EmitPayload,
+  Grid,
+  ServerEvent,
+  ShipPlacement,
+} from '@nx-web-test/shared';
 
 @WebSocketGateway({
   cors: {
@@ -22,8 +27,10 @@ export class BattleshipGateway {
   constructor(private readonly playerService: PlayerService) {}
 
   @SubscribeMessage(ServerEvent.JoinGame)
-  handleJoinGame(client: Socket, data: { playerId: string }): void {
-    const { playerId } = data;
+  handleJoinGame(client: Socket, payload: EmitPayload): void {
+    const {
+      ids: { playerId },
+    } = payload;
     this.logger.debug(`Handling joinGame for playerId: ${playerId}`);
     this.playerService.joinGame(this.server, client, playerId);
   }

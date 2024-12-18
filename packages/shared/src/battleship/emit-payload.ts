@@ -1,21 +1,11 @@
 import { ClientEvent } from './client-event';
 import { ServerEvent } from './server-event';
-
-export enum StatusCode {
-  OK = 200,
-  Created = 201,
-  NoContent = 204,
-  BadRequest = 400,
-  Unauthorized = 401,
-  Forbidden = 403,
-  NotFound = 404,
-  InternalServerError = 500,
-  ServiceUnavailable = 503,
-}
+import { StatusCode } from './status-code';
 
 export interface EmitPayload<T = any> {
   status: StatusCode;
   event: ClientEvent | ServerEvent;
+  ids: { playerId: string; socketId: string };
   message: string;
   data?: T;
   timestamp?: number;

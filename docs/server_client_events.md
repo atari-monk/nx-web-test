@@ -28,3 +28,6 @@ export enum ClientEvent {
 ```
 
 ## Communication sequence
+
+1. Client<-ClientEvent.Connect
+2. Client->ServerEvent.JoinGame

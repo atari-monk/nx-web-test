@@ -41,8 +41,7 @@ export class SocketService {
         ServerEvent.JoinGame,
         { playerId, socketId: socket.id ?? '' },
         StatusCode.OK,
-        'Client connected to the server',
-        { playerId }
+        'Client connecting to the server'
       );
     });
 
