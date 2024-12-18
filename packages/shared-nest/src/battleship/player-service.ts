@@ -2,13 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PlayerRepository } from './player-repository';
 import {
-  emitEvent,
   EmitEvent,
   FleetUtils,
   Grid,
   ShipPlacement,
   StatusCode,
 } from '@nx-web-test/shared';
+import { emitEvent } from './emit-event';
 
 @Injectable()
 export class PlayerService {
