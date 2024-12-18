@@ -7,6 +7,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { PlayerService } from './player-service';
 import { Grid, ShipPlacement } from '@nx-web-test/shared';
+import { ServerEvent } from './ServerEvent';
 
 @WebSocketGateway({
   cors: {
@@ -21,20 +22,20 @@ export class BattleshipGateway {
 
   constructor(private readonly playerService: PlayerService) {}
 
-  @SubscribeMessage('joinGame')
+  @SubscribeMessage(ServerEvent.JoinGame)
   handleJoinGame(client: Socket, data: { playerId: string }): void {
     const { playerId } = data;
     this.logger.debug(`Handling joinGame for playerId: ${playerId}`);
     this.playerService.joinGame(this.server, client, playerId);
   }
 
-  @SubscribeMessage('disconnect')
+  @SubscribeMessage(ServerEvent.Disconnect)
   handleDisconnect(client: Socket): void {
     this.logger.debug(`Handling disconnect for socketId: ${client.id}`);
     this.playerService.removePlayer(client.id);
   }
 
-  @SubscribeMessage('placeFleet')
+  @SubscribeMessage(ServerEvent.PlaceFleet)
   handlePlaceFleet(
     client: Socket,
     data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }
@@ -43,7 +44,7 @@ export class BattleshipGateway {
     this.playerService.placeFleet(this.server, client, data);
   }
 
-  @SubscribeMessage('attack')
+  @SubscribeMessage(ServerEvent.Attack)
   handleAttack(
     client: Socket,
     data: { playerId: string; coords: { x: number; y: number } }
