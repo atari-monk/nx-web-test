@@ -249,7 +249,7 @@ export class PlayerService {
         { playerId, socketId: client.id },
         StatusCode.OK,
         `Player ${playerId} on socket ${client.id} hit at (${x}, ${y})`,
-        { x, y, result: 'hit' }
+        { coords: { x, y, hit: true } }
       );
 
       emitEvent(
@@ -259,7 +259,7 @@ export class PlayerService {
         { playerId, socketId: '' },
         StatusCode.OK,
         `Player ${opponent.id} took hit at (${x}, ${y})`,
-        { x, y, result: 'hit' },
+        { coords: { x, y, hit: true } },
         opponent.id
       );
 
@@ -283,7 +283,7 @@ export class PlayerService {
         { playerId, socketId: client.id },
         StatusCode.OK,
         `Attack result: miss at (${x}, ${y}) by: ${playerId}`,
-        { x, y, result: 'miss' }
+        { coords: { x, y, hit: false } }
       );
 
       emitEvent(
@@ -293,7 +293,7 @@ export class PlayerService {
         { playerId, socketId: client.id },
         StatusCode.OK,
         `Attack result: miss at (${x}, ${y}) by: ${playerId}`,
-        { x, y, result: 'miss' },
+        { coords: { x, y, hit: false } },
         opponent.id
       );
     }

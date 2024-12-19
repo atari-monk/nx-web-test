@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Cell, Grid } from '@nx-web-test/shared';
 import { BattleGridProps } from './battle-grid-props';
 import { SocketService } from './socket-service';
@@ -19,20 +19,28 @@ const BattleGrid: React.FC<BattleGridProps> = ({ gridSize, onCellClick }) => {
     ),
   }));
 
-  const handleCellClick = (x: number, y: number) => {
-    setGrid((prevGrid) => {
-      const updatedCells = prevGrid.cells.map((row, rowIndex) =>
-        row.map((cell, colIndex) => {
-          if (rowIndex === x && colIndex === y) {
-            socketService.attack(playerService.getPlayerId(), { x, y });
-            return { ...cell, hit: true };
-          }
-          return cell;
-        })
-      );
-      return { ...prevGrid, cells: updatedCells };
+  useEffect(() => {
+    socketService.setAttackResultCallback(({ x, y, hit }) => {
+      setGrid((prevGrid) => {
+        const updatedCells = prevGrid.cells.map((row, rowIndex) =>
+          row.map((cell, colIndex) => {
+            if (rowIndex === x && colIndex === y) {
+              return { ...cell, hit };
+            }
+            return cell;
+          })
+        );
+        return { ...prevGrid, cells: updatedCells };
+      });
     });
 
+    return () => {
+      socketService.setAttackResultCallback(null);
+    };
+  }, [socketService]);
+
+  const handleCellClick = (x: number, y: number) => {
+    socketService.attack(playerService.getPlayerId(), { x, y });
     if (onCellClick) {
       onCellClick(x, y);
     }

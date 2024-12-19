@@ -14,6 +14,9 @@ export class SocketService {
   private static instance: SocketService;
   private socket: Socket;
   private playerId: string;
+  private attackResultCallback:
+    | ((coords: { x: number; y: number; hit: boolean }) => void)
+    | null = null;
 
   private constructor(serverUrl: string, playerId: string) {
     this.playerId = playerId;
@@ -96,9 +99,17 @@ export class SocketService {
     });
 
     socket.on(SocketEvent.AttackResult, (payload: EmitPayload) => {
-      const { message } = payload;
+      const {
+        data: { coords },
+        message,
+      } = payload;
       console.debug(message);
       sendMessage(message);
+
+      console.debug('coords', coords);
+      if (this.attackResultCallback) {
+        this.attackResultCallback(coords);
+      }
     });
 
     socket.on(SocketEvent.TurnChange, (payload: EmitPayload) => {
@@ -141,6 +152,12 @@ export class SocketService {
       'Fleet placing',
       data
     );
+  }
+
+  setAttackResultCallback(
+    callback: ((coords: { x: number; y: number; hit: boolean }) => void) | null
+  ) {
+    this.attackResultCallback = callback;
   }
 
   attack(playerId: string, coords: { x: number; y: number }) {
