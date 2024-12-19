@@ -245,7 +245,7 @@ export class PlayerService {
         SocketEvent.AttackResult,
         { playerId, socketId: client.id },
         StatusCode.OK,
-        `Attack result: hit at (${x}, ${y}) by: ${playerId}`,
+        `Player ${playerId} on socket ${client.id} hit at (${x}, ${y})`,
         { x, y, result: 'hit' }
       );
 
@@ -253,9 +253,9 @@ export class PlayerService {
         this.logger,
         server,
         SocketEvent.AttackResult,
-        { playerId, socketId: client.id },
+        { playerId, socketId: '' },
         StatusCode.OK,
-        `Attack result: hit at (${x}, ${y}) by: ${playerId}`,
+        `Player ${opponent.id} took hit at (${x}, ${y})`,
         { x, y, result: 'hit' },
         opponent.id
       );

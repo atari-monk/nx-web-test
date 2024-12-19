@@ -93,6 +93,12 @@ export class SocketService {
       sendMessage(msg);
     });
 
+    socket.on(SocketEvent.AttackResult, (payload: EmitPayload) => {
+      const { message } = payload;
+      console.debug(message);
+      sendMessage(message);
+    });
+
     socket.on(SocketEvent.TurnChange, (payload: EmitPayload) => {
       const {
         ids: { playerId },
