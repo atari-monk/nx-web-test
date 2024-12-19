@@ -140,10 +140,10 @@ export class PlayerService {
       `Fleet placed for player ${playerId} on socket ${client.id}`
     );
 
-    this.checkGameReady(server);
+    this.checkGameReady(server, playerId);
   }
 
-  private checkGameReady(server: Server) {
+  private checkGameReady(server: Server, playerId: string) {
     this.logger.debug('Checking if the game is ready to start.');
 
     if (!this.playerRepository.isFull()) {
@@ -165,10 +165,10 @@ export class PlayerService {
       this.logger,
       server,
       SocketEvent.GameStart,
-      { playerId: '', socketId: '' },
+      { playerId, socketId: '' },
       StatusCode.OK,
       'All players have placed their fleets. Game starts!',
-      { firstTurn: this.playerRepository.getPlayerInTurn() }
+      { firstTurn: this.playerRepository.getPlayerInTurn().id }
     );
   }
 

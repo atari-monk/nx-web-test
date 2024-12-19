@@ -13,8 +13,10 @@ import { emitEvent } from './emit-event';
 export class SocketService {
   private static instance: SocketService;
   private socket: Socket;
+  private playerId: string;
 
   private constructor(serverUrl: string, playerId: string) {
+    this.playerId = playerId;
     this.socket = this.connectToServer(serverUrl, playerId);
   }
 
@@ -81,16 +83,16 @@ export class SocketService {
 
     socket.on(SocketEvent.GameStart, (payload: EmitPayload) => {
       const {
-        ids: { playerId },
         message,
-        data,
+        data: { firstTurn },
       } = payload;
-      const msg = message.concat(
-        ' ',
-        data.firstTurn === playerId ? 'Your turn' : 'Wait for your turn'
+      console.debug('firstTurn:', firstTurn, 'playerId:', this.playerId);
+      sendMessage(
+        message.concat(
+          ' ',
+          firstTurn === this.playerId ? 'Your turn' : 'Wait for your turn'
+        )
       );
-      console.debug(msg);
-      sendMessage(msg);
     });
 
     socket.on(SocketEvent.AttackResult, (payload: EmitPayload) => {
