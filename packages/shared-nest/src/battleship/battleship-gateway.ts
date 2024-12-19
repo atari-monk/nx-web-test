@@ -8,9 +8,7 @@ import { Logger } from '@nestjs/common';
 import { PlayerService } from './player-service';
 import {
   EmitPayload,
-  Grid,
-  ServerEvent,
-  ShipPlacement,
+  SocketEvent,
 } from '@nx-web-test/shared';
 
 @WebSocketGateway({
@@ -26,7 +24,7 @@ export class BattleshipGateway {
 
   constructor(private readonly playerService: PlayerService) {}
 
-  @SubscribeMessage(ServerEvent.JoinGame)
+  @SubscribeMessage(SocketEvent.JoinGame)
   handleJoinGame(client: Socket, payload: EmitPayload): void {
     const {
       ids: { playerId },
@@ -35,22 +33,25 @@ export class BattleshipGateway {
     this.playerService.joinGame(this.server, client, playerId);
   }
 
-  @SubscribeMessage(ServerEvent.Disconnect)
+  @SubscribeMessage(SocketEvent.Disconnect)
   handleDisconnect(client: Socket): void {
     this.logger.debug(`Handling disconnect for socketId: ${client.id}`);
     this.playerService.removePlayer(client.id);
   }
 
-  @SubscribeMessage(ServerEvent.PlaceFleet)
-  handlePlaceFleet(
-    client: Socket,
-    data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }
-  ): void {
-    this.logger.debug(`Handling placeFleet for playerId: ${data.playerId}`);
+  @SubscribeMessage(SocketEvent.PlaceFleet)
+  handlePlaceFleet(client: Socket, payload: EmitPayload): void {
+    const {
+      ids: { playerId, socketId },
+      data,
+    } = payload;
+    this.logger.debug(
+      `Handling placeFleet for player ${playerId} on socket ${socketId}`
+    );
     this.playerService.placeFleet(this.server, client, data);
   }
 
-  @SubscribeMessage(ServerEvent.Attack)
+  @SubscribeMessage(SocketEvent.Attack)
   handleAttack(
     client: Socket,
     data: { playerId: string; coords: { x: number; y: number } }

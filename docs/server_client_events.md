@@ -40,3 +40,5 @@ export enum ClientEvent {
 9. Client<-ClientEvent.GameReady
 10. Server->ClientEvent.Error
 11. Client<-ClientEvent.Error
+12. Client->ClientEvent.PlaceFleet
+13. Server<-ClientEvent.PlaceFleet

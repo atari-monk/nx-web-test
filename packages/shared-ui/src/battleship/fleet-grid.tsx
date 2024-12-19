@@ -78,8 +78,7 @@ const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
           if (fleetService.isFleetCompleted()) {
             onFleetComplete();
           }
-          socketService?.placeFleet({
-            playerId,
+          socketService?.placeFleet(playerId, {
             grid: fleetService.getGrid(),
             fleet: fleetService.getFleet(),
           });

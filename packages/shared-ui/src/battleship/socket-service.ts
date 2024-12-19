@@ -1,8 +1,7 @@
 import {
-  ClientEvent,
+  SocketEvent,
   EmitPayload,
   Grid,
-  ServerEvent,
   ShipPlacement,
   StatusCode,
 } from '@nx-web-test/shared';
@@ -35,11 +34,11 @@ export class SocketService {
       query: { playerId },
     });
 
-    socket.on(ClientEvent.Connect, () => {
+    socket.on(SocketEvent.Connect, () => {
       emitEvent(
         console,
         socket,
-        ServerEvent.JoinGame,
+        SocketEvent.JoinGame,
         { playerId, socketId: socket.id ?? '' },
         StatusCode.OK,
         'Client connecting to the server'
@@ -47,27 +46,27 @@ export class SocketService {
       console.debug('Sending Join Game');
     });
 
-    socket.on(ClientEvent.ReconnectPlayer, (payload: EmitPayload) => {
+    socket.on(SocketEvent.ReconnectPlayer, (payload: EmitPayload) => {
       const {
         ids: { playerId, socketId },
       } = payload;
       console.debug(`Player ${playerId} on socket ${socketId} Reconnect`);
     });
 
-    socket.on(ClientEvent.Joined, (payload: EmitPayload) => {
+    socket.on(SocketEvent.Joined, (payload: EmitPayload) => {
       const {
         ids: { playerId, socketId },
       } = payload;
       console.debug(`Player ${playerId} on socket ${socketId} Joined`);
     });
 
-    socket.on(ClientEvent.GameReady, (payload: EmitPayload) => {
+    socket.on(SocketEvent.GameReady, (payload: EmitPayload) => {
       const { message } = payload;
       console.debug('Game ready:', message);
       sendMessage(`Game ready: ${message}`);
     });
 
-    socket.on(ClientEvent.Error, (payload: EmitPayload) => {
+    socket.on(SocketEvent.Error, (payload: EmitPayload) => {
       const { message } = payload;
       console.debug('Error:', message);
       sendMessage(`Error: ${message}`);
@@ -107,8 +106,17 @@ export class SocketService {
     this.socket.disconnect();
   }
 
-  placeFleet(data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }) {
+  placeFleet(playerId: string, data: { grid: Grid; fleet: ShipPlacement[] }) {
     this.socket?.emit('placeFleet', data);
+    emitEvent(
+      console,
+      this.socket,
+      SocketEvent.PlaceFleet,
+      { playerId: playerId, socketId: this.socket.id ?? '' },
+      StatusCode.OK,
+      'Fleet placing',
+      data
+    );
   }
 
   attack(playerId: string, { x, y }: { x: number; y: number }) {

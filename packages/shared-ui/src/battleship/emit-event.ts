@@ -1,15 +1,10 @@
-import {
-  ClientEvent,
-  StatusCode,
-  EmitPayload,
-  ServerEvent,
-} from '@nx-web-test/shared';
+import { SocketEvent, StatusCode, EmitPayload } from '@nx-web-test/shared';
 import { Socket } from 'socket.io-client';
 
 export function emitEvent(
   console: Console,
   target: Socket,
-  event: ClientEvent | ServerEvent,
+  event: SocketEvent,
   ids: { playerId: string; socketId: string },
   status: StatusCode,
   message: string,

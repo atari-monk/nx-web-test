@@ -1,10 +1,10 @@
-import { ClientEvent } from './client-event';
+import { SocketEvent } from './socket-event';
 import { ServerEvent } from './server-event';
 import { StatusCode } from './status-code';
 
 export interface EmitPayload<T = any> {
   status: StatusCode;
-  event: ClientEvent | ServerEvent;
+  event: SocketEvent | ServerEvent;
   ids: { playerId: string; socketId: string };
   message: string;
   data?: T;
