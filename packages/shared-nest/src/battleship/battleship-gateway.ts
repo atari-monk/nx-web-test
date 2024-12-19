@@ -52,11 +52,11 @@ export class BattleshipGateway {
   handleAttack(client: Socket, payload: EmitPayload): void {
     const {
       ids: { playerId, socketId },
-      data,
+      data: { coords },
     } = payload;
     this.logger.debug(
-      `Handling attack from player ${playerId} on socket ${socketId}`
+      `Attack received from player ${playerId} on socket ${socketId} at coordinates (${coords.x}, ${coords.y})`
     );
-    this.playerService.attack(this.server, client, data);
+    this.playerService.attack(this.server, client, playerId, coords);
   }
 }

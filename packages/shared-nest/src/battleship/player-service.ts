@@ -175,16 +175,10 @@ export class PlayerService {
   attack(
     server: Server,
     client: Socket,
-    data: { playerId: string; coords: { x: number; y: number } }
+    playerId: string,
+    coords: { x: number; y: number }
   ) {
-    const {
-      playerId,
-      coords: { x, y },
-    } = data;
-    this.logger.debug(
-      `Attack received from player ${playerId} at coordinates (${x}, ${y})`
-    );
-
+    const { x, y } = coords;
     const currentPlayer = this.playerRepository.getPlayerInTurn();
     const opponent = this.playerRepository.getOpponentPlayer(currentPlayer.id);
 
@@ -200,6 +194,14 @@ export class PlayerService {
       return;
     }
 
+    this.logger.debug(
+      '',
+      'playerId: ',
+      playerId,
+      'currentPlayer.id: ',
+      currentPlayer.id
+    );
+
     if (playerId !== currentPlayer.id) {
       emitEvent(
         this.logger,
@@ -207,7 +209,7 @@ export class PlayerService {
         SocketEvent.Error,
         { playerId, socketId: client.id },
         StatusCode.BadRequest,
-        `Invalid turn attempt by: ${playerId}`
+        `Invalid turn attempt, player ${playerId} !== currentPlayer ${currentPlayer.id}`
       );
       return;
     }
