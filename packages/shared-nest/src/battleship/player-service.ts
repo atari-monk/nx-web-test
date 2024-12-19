@@ -108,9 +108,10 @@ export class PlayerService {
   placeFleet(
     server: Server,
     client: Socket,
-    data: { playerId: string; grid: Grid; fleet: ShipPlacement[] }
+    playerId: string,
+    data: { grid: Grid; fleet: ShipPlacement[] }
   ) {
-    const { playerId, grid, fleet } = data;
+    const { grid, fleet } = data;
     const player = this.playerRepository.getPlayerById(playerId);
 
     if (!(player && player.state === 'placement')) {

@@ -45,7 +45,7 @@ export class BattleshipGateway {
     this.logger.debug(
       `Handling placeFleet for player ${playerId} on socket ${socketId}`
     );
-    this.playerService.placeFleet(this.server, client, data);
+    this.playerService.placeFleet(this.server, client, playerId, data);
   }
 
   @SubscribeMessage(SocketEvent.Attack)
