@@ -107,7 +107,15 @@ export class SocketService {
         data: { nextPlayerId },
       } = payload;
       const msg =
-        nextPlayerId === playerId ? 'Your turn' : 'Wait for your turn';
+        nextPlayerId === this.playerId ? 'Your turn' : 'Wait for your turn';
+      console.debug(
+        'nextPlayerId:',
+        nextPlayerId,
+        'this.playerId:',
+        this.playerId,
+        'playerId:',
+        playerId
+      );
       console.debug(msg);
       sendMessage(msg);
     });

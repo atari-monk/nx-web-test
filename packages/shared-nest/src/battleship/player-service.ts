@@ -305,7 +305,7 @@ export class PlayerService {
       this.logger,
       server,
       SocketEvent.TurnChange,
-      { playerId: '', socketId: '' },
+      { playerId, socketId: client.id },
       StatusCode.OK,
       `Turn changed. Next player: ${nextPlayerId}`,
       { nextPlayerId }
