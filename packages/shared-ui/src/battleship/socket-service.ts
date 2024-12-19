@@ -79,13 +79,18 @@ export class SocketService {
       sendMessage(message);
     });
 
-    socket.on('gameStart', (data) => {
-      console.debug('Game start:', data);
-      sendMessage(
-        `Game start: ${data.message}, ${
-          data.firstTurn === playerId ? 'Your turn' : 'Wait for your turn'
-        }`
+    socket.on(SocketEvent.GameStart, (payload: EmitPayload) => {
+      const {
+        ids: { playerId },
+        message,
+        data,
+      } = payload;
+      const msg = message.concat(
+        ' ',
+        data.firstTurn === playerId ? 'Your turn' : 'Wait for your turn'
       );
+      console.debug(msg);
+      sendMessage(msg);
     });
 
     socket.on('turnChange', (nextPlayerId) => {

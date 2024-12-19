@@ -45,4 +45,5 @@ export enum ClientEvent {
 14. Client<-SocketEvent.PlaceFleet
 15. Client->SocketEvent.Attack
 16. Server<-SocketEvent.Attack
-17. Client->
+17. Server->SocketEvent.GameStart
+18. Client<-SocketEvent.GameStart
