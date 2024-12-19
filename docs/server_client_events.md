@@ -29,16 +29,18 @@ export enum ClientEvent {
 
 ## Communication sequence
 
-1. Client<-ClientEvent.Connect
-2. Client->ServerEvent.JoinGame
-3. Server<-ServerEvent.JoinGame
-4. [if player exist] Server->ClientEvent.ReconnectPlayer (todo: handle it on client)
-5. Client<-ClientEvent.ReconnectPlayer
-6. [if player new] Server->ClientEvent.Joined
-7. Client<-ClientEvent.Joined
-8. [if players full] Server->ClientEvent.GameReady
-9. Client<-ClientEvent.GameReady
-10. Server->ClientEvent.Error
-11. Client<-ClientEvent.Error
-12. Client->ClientEvent.PlaceFleet
-13. Server<-ClientEvent.PlaceFleet
+1. Client<-SocketEvent.Connect
+2. Client->SocketEvent.JoinGame
+3. Server<-SocketEvent.JoinGame
+4. [if player exist] Server->SocketEvent.ReconnectPlayer (todo: handle it on client)
+5. Client<-SocketEvent.ReconnectPlayer
+6. [if player new] Server->SocketEvent.Joined
+7. Client<-SocketEvent.Joined
+8. [if players full] Server->SocketEvent.GameReady
+9. Client<-SocketEvent.GameReady
+10. Server->SocketEvent.Error
+11. Client<-SocketEvent.Error
+12. Client->SocketEvent.PlaceFleet
+13. Server<-SocketEvent.PlaceFleet
+14. Client->SocketEvent.Attack
+15. Server<-SocketEvent.Attack

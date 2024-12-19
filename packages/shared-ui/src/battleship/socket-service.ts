@@ -107,7 +107,6 @@ export class SocketService {
   }
 
   placeFleet(playerId: string, data: { grid: Grid; fleet: ShipPlacement[] }) {
-    this.socket?.emit('placeFleet', data);
     emitEvent(
       console,
       this.socket,
@@ -119,7 +118,18 @@ export class SocketService {
     );
   }
 
-  attack(playerId: string, { x, y }: { x: number; y: number }) {
-    this.socket?.emit('attack', { playerId, coords: { x, y } });
+  attack(playerId: string, coords: { x: number; y: number }) {
+    emitEvent(
+      console,
+      this.socket,
+      SocketEvent.Attack,
+      {
+        playerId,
+        socketId: this.socket.id ?? '',
+      },
+      StatusCode.OK,
+      'Attack',
+      { coords }
+    );
   }
 }

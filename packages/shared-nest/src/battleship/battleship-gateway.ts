@@ -6,10 +6,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { PlayerService } from './player-service';
-import {
-  EmitPayload,
-  SocketEvent,
-} from '@nx-web-test/shared';
+import { EmitPayload, SocketEvent } from '@nx-web-test/shared';
 
 @WebSocketGateway({
   cors: {
@@ -52,11 +49,14 @@ export class BattleshipGateway {
   }
 
   @SubscribeMessage(SocketEvent.Attack)
-  handleAttack(
-    client: Socket,
-    data: { playerId: string; coords: { x: number; y: number } }
-  ): void {
-    this.logger.debug(`Handling attack from playerId: ${data.playerId}`);
+  handleAttack(client: Socket, payload: EmitPayload): void {
+    const {
+      ids: { playerId, socketId },
+      data,
+    } = payload;
+    this.logger.debug(
+      `Handling attack from player ${playerId} on socket ${socketId}`
+    );
     this.playerService.attack(this.server, client, data);
   }
 }
