@@ -47,3 +47,5 @@ export enum ClientEvent {
 16. Server<-SocketEvent.Attack
 17. Server->SocketEvent.GameStart
 18. Client<-SocketEvent.GameStart
+19. Server->SocketEvent.TurnChange
+20. Client<-SocketEvent.TurnChange

@@ -93,13 +93,15 @@ export class SocketService {
       sendMessage(msg);
     });
 
-    socket.on('turnChange', (nextPlayerId) => {
-      console.debug('Turn change:', nextPlayerId);
-      sendMessage(
-        `Turn change: ${
-          nextPlayerId === playerId ? 'Your turn' : 'Wait for your turn'
-        }`
-      );
+    socket.on(SocketEvent.TurnChange, (payload: EmitPayload) => {
+      const {
+        ids: { playerId },
+        data: { nextPlayerId },
+      } = payload;
+      const msg =
+        nextPlayerId === playerId ? 'Your turn' : 'Wait for your turn';
+      console.debug(msg);
+      sendMessage(msg);
     });
 
     return socket;
