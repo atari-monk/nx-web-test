@@ -42,5 +42,7 @@ export enum ClientEvent {
 11. Client<-SocketEvent.Error
 12. Client->SocketEvent.PlaceFleet
 13. Server<-SocketEvent.PlaceFleet
-14. Client->SocketEvent.Attack
-15. Server<-SocketEvent.Attack
+14. Client<-SocketEvent.PlaceFleet
+15. Client->SocketEvent.Attack
+16. Server<-SocketEvent.Attack
+17. Client->

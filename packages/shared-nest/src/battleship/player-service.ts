@@ -136,7 +136,7 @@ export class PlayerService {
       SocketEvent.GameReady,
       { playerId, socketId: client.id },
       StatusCode.OK,
-      `Fleet placed for player: ${playerId}`
+      `Fleet placed for player ${playerId} on socket ${client.id}`
     );
 
     this.checkGameReady(server);

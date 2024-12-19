@@ -62,8 +62,9 @@ export class SocketService {
 
     socket.on(SocketEvent.GameReady, (payload: EmitPayload) => {
       const { message } = payload;
-      console.debug('Game ready:', message);
-      sendMessage(`Game ready: ${message}`);
+      const msg = `Game ready: ${message}`;
+      console.debug(msg);
+      sendMessage(msg);
     });
 
     socket.on(SocketEvent.Error, (payload: EmitPayload) => {
@@ -72,9 +73,10 @@ export class SocketService {
       sendMessage(`Error: ${message}`);
     });
 
-    socket.on('fleetPlaced', (playerId) => {
-      console.debug('Fleet placed confirmation for playerId:', playerId);
-      sendMessage(`Fleet placed: ${playerId}`);
+    socket.on(SocketEvent.PlaceFleet, (payload: EmitPayload) => {
+      const { message } = payload;
+      console.debug(message);
+      sendMessage(message);
     });
 
     socket.on('gameStart', (data) => {
