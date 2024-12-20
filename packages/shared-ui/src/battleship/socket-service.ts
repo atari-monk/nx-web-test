@@ -9,6 +9,7 @@ import { io, Socket } from 'socket.io-client';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
 import { emitEvent } from './emit-event';
+import EventEmitter from 'events';
 
 export class SocketService {
   private static instance: SocketService;
@@ -17,10 +18,13 @@ export class SocketService {
   private attackResultCallback:
     | ((coords: { x: number; y: number; hit: boolean }) => void)
     | null = null;
+  private connectionStatusEmitter: EventEmitter;
 
   private constructor(serverUrl: string, playerId: string) {
     this.playerId = playerId;
     this.socket = this.connectToServer(serverUrl, playerId);
+    this.connectionStatusEmitter = new EventEmitter();
+    this.connectionStatusEmitter.emit(SocketEvent.ConnectionStatus, undefined);
   }
 
   public static getInstance(): SocketService {
@@ -34,12 +38,19 @@ export class SocketService {
     return SocketService.instance;
   }
 
+  public onConnectionStatusChange(
+    callback: (isConnected: boolean | undefined) => void
+  ): void {
+    this.connectionStatusEmitter.on(SocketEvent.ConnectionStatus, callback);
+  }
+
   private connectToServer(serverUrl: string, playerId: string): Socket {
     const socket = io(serverUrl, {
       query: { playerId },
     });
 
     socket.on(SocketEvent.Connect, () => {
+      this.connectionStatusEmitter.emit(SocketEvent.ConnectionStatus, true);
       emitEvent(
         console,
         socket,
@@ -129,6 +140,20 @@ export class SocketService {
       );
       console.debug(msg);
       sendMessage(msg);
+    });
+
+    socket.on(SocketEvent.Connect_Error, (error) => {
+      console.error('Connection Error:', error);
+      this.connectionStatusEmitter.emit(SocketEvent.ConnectionStatus, false);
+    });
+
+    socket.on(SocketEvent.Connect_Timeout, (timeout) => {
+      console.error('Connection Timeout:', timeout);
+      this.connectionStatusEmitter.emit(SocketEvent.ConnectionStatus, false);
+    });
+
+    socket.on(SocketEvent.Disconnect, () => {
+      this.connectionStatusEmitter.emit(SocketEvent.ConnectionStatus, false);
     });
 
     return socket;

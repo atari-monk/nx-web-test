@@ -4,7 +4,7 @@ import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
 import { FleetGridProps } from './fleet-grid-props';
-import { Cell, FleetUtils } from '@nx-web-test/shared';
+import { Cell, FleetUtils, SocketEvent } from '@nx-web-test/shared';
 
 const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
   const playerService = PlayerService.getInstance();
@@ -20,6 +20,35 @@ const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
     x: number;
     y: number;
   } | null>(null);
+  const [isConnected, setIsConnected] = useState<boolean | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    const connectionCallback = (status: boolean | undefined) => {
+      setIsConnected(status);
+    };
+
+    socketService.onConnectionStatusChange(connectionCallback);
+
+    return () => {
+      socketService
+        .getSocket()
+        .off(SocketEvent.ConnectionStatus, connectionCallback);
+    };
+  }, [socketService]);
+
+  useEffect(() => {
+    if (isConnected === undefined) {
+      sendMessage('Connecting...');
+    }
+    if (isConnected === true) {
+      sendMessage('Successfully connected to the server!');
+    }
+    if (isConnected === false) {
+      sendMessage('Unable to connect to the server. Please try again later.');
+    }
+  }, [isConnected]);
 
   const handleShipRotation = useCallback(() => {
     setGrid(fleetService.getGrid());
@@ -116,7 +145,7 @@ const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${gridSize}, 30px)`,
-          pointerEvents: fleetCompleted ? 'none' : 'auto',
+          pointerEvents: !isConnected || fleetCompleted ? 'none' : 'auto',
         }}
       >
         {grid.cells.map((row, rowIndex) =>

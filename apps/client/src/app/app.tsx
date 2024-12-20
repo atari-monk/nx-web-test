@@ -18,7 +18,11 @@ export function App() {
   };
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ order: 2 }}>
+        <MessageDisplay />
+      </div>
+
       {gamePhase === 'fleetPlacement' ? (
         <FleetGrid
           gridSize={gridSize}
@@ -27,7 +31,6 @@ export function App() {
       ) : (
         <BattleGrid gridSize={gridSize} />
       )}
-      <MessageDisplay />
 
       {/* Uncomment these if needed */}
       {/* <Chat /> */}

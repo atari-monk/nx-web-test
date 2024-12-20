@@ -1,4 +1,8 @@
 export enum SocketEvent {
+  Connect_Error = 'connect_error',
+  Connect_Timeout = 'connect_timeout',
+  ConnectionStatus = 'connectionStatus', //local event
+  GameMessage = 'gameMessage', //local custom event
   Connect = 'connect',
   JoinGame = 'joinGame',
   ReconnectPlayer = 'reconnectPlayer',

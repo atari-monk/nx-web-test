@@ -1,21 +1,19 @@
+import { SocketEvent } from '@nx-web-test/shared';
 import React, { useState, useEffect } from 'react';
 
 const MessageDisplay: React.FC = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const handleMessage = (newMessage: string) => {
-      setMessage(newMessage);
+    const handleMessage = (event: any) => {
+      console.log('Received message:', event.detail);
+      setMessage(event.detail);
     };
 
-    window.addEventListener('gameMessage', (event: any) =>
-      handleMessage(event.detail)
-    );
+    window.addEventListener(SocketEvent.GameMessage, handleMessage);
 
     return () => {
-      window.removeEventListener('gameMessage', (event: any) =>
-        handleMessage(event.detail)
-      );
+      window.removeEventListener(SocketEvent.GameMessage, handleMessage);
     };
   }, []);
 
