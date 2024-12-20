@@ -2,6 +2,7 @@ export interface Cell {
   id: number;
   occupied: boolean;
   hit: boolean;
+  miss: boolean;
 }
 
 export interface Grid {

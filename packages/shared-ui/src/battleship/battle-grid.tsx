@@ -15,6 +15,7 @@ const BattleGrid: React.FC<BattleGridProps> = ({ gridSize, onCellClick }) => {
         id: rowIndex * gridSize + colIndex,
         occupied: false,
         hit: false,
+        miss: false,
       }))
     ),
   }));
@@ -25,7 +26,7 @@ const BattleGrid: React.FC<BattleGridProps> = ({ gridSize, onCellClick }) => {
         const updatedCells = prevGrid.cells.map((row, rowIndex) =>
           row.map((cell, colIndex) => {
             if (rowIndex === x && colIndex === y) {
-              return { ...cell, hit };
+              return { ...cell, hit, miss: !hit };
             }
             return cell;
           })
@@ -50,7 +51,7 @@ const BattleGrid: React.FC<BattleGridProps> = ({ gridSize, onCellClick }) => {
     width: '30px',
     height: '30px',
     border: '1px solid #ccc',
-    backgroundColor: cell.hit ? 'red' : 'white',
+    backgroundColor: cell.hit ? 'red' : cell.miss ? 'blue' : undefined,
     cursor: 'pointer',
   });
 

@@ -81,6 +81,7 @@ export class PlayerRepository {
         id: idCounter++,
         occupied: false,
         hit: false,
+        miss: false,
       }))
     );
     return grid;
