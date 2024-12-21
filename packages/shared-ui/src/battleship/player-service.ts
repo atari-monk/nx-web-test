@@ -3,7 +3,7 @@ export class PlayerService {
   private playerId: string;
 
   private constructor() {
-    this.playerId = this.generatePlayerId();
+    this.playerId = this.getOrGeneratePlayerId();
   }
 
   public static getInstance(): PlayerService {
@@ -13,8 +13,14 @@ export class PlayerService {
     return PlayerService.instance;
   }
 
-  private generatePlayerId(): string {
-    return `player-${Math.random().toString(36).substr(2, 9)}`;
+  private getOrGeneratePlayerId(): string {
+    const storedId = localStorage.getItem('playerId');
+    if (storedId) {
+      return storedId;
+    }
+    const newId = `player-${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('playerId', newId);
+    return newId;
   }
 
   public getPlayerId(): string {
