@@ -4,7 +4,12 @@ import { SocketService } from './socket-service';
 import { PlayerService } from './player-service';
 import { sendMessage } from './sender';
 import { FleetGridProps } from './fleet-grid-props';
-import { Cell, FleetUtils, SocketEvent } from '@nx-web-test/shared';
+import {
+  Cell,
+  EmitPayload,
+  FleetUtils,
+  SocketEvent,
+} from '@nx-web-test/shared';
 
 const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
   const playerService = PlayerService.getInstance();
@@ -49,6 +54,33 @@ const FleetGrid: React.FC<FleetGridProps> = ({ gridSize, onFleetComplete }) => {
       sendMessage('Unable to connect to the server. Please try again later.');
     }
   }, [isConnected]);
+
+  useEffect(() => {
+    // Listen for reconnect event
+    const reconnectCallback = (payload: EmitPayload) => {
+      const { message, data } = payload;
+      sendMessage(message);
+
+      if (!data.fleet) return;
+      // Update FleetService with received data
+      fleetService.setGrid(data.grid);
+      fleetService.setFleet(data.fleet);
+
+      // Update component state
+      setGrid(fleetService.getGrid());
+      setFleetCompleted(fleetService.isFleetCompleted());
+    };
+
+    socketService
+      .getSocket()
+      .on(SocketEvent.ReconnectPlayer, reconnectCallback);
+
+    return () => {
+      socketService
+        .getSocket()
+        .off(SocketEvent.ReconnectPlayer, reconnectCallback);
+    };
+  }, [socketService, fleetService]);
 
   const handleShipRotation = useCallback(() => {
     setGrid(fleetService.getGrid());

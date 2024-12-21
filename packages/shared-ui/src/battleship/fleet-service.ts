@@ -26,6 +26,7 @@ export class FleetService {
         id: idCounter++, // Assign a unique ID to each cell
         occupied: false,
         hit: false,
+        miss: false,
       }))
     );
 
@@ -38,6 +39,15 @@ export class FleetService {
 
   getFleet() {
     return this.fleet;
+  }
+
+  setGrid(grid: Grid) {
+    this.grid = grid;
+  }
+
+  setFleet(fleet: ShipPlacement[]) {
+    this.fleet = fleet;
+    this.currentShipIndex = fleet.length;
   }
 
   getCurrentShip() {
